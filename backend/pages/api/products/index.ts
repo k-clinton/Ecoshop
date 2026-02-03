@@ -66,7 +66,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'SELECT id, name, sku, price, stock, available FROM product_variants WHERE product_id = ?',
         [product.id]
       );
-      product.variants = variants;
+      product.variants = (variants as any[]).map(v => ({
+        ...v,
+        available: Boolean(v.available)
+      }));
     }
 
     return sendSuccess(res, products);
