@@ -131,7 +131,7 @@ export function SignInPage() {
         <div className="mt-6 p-4 rounded-lg bg-muted/50 text-sm">
           <p className="font-medium mb-2">Demo Accounts:</p>
           <p className="text-muted-foreground">Admin: admin@ecoshop.com / admin123</p>
-          <p className="text-muted-foreground">User: user@example.com / user123</p>
+          <p className="text-muted-foreground">Customer: customer@ecoshop.com / customer123</p>
         </div>
       </div>
     </main>

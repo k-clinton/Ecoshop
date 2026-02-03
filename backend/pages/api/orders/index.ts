@@ -38,7 +38,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           [order.id]
         );
         order.items = items;
-        order.shippingAddress = JSON.parse(order.shippingAddress);
+        
+        // Parse shippingAddress if it's a string
+        if (typeof order.shippingAddress === 'string') {
+          try {
+            order.shippingAddress = JSON.parse(order.shippingAddress);
+          } catch (e) {
+            // If parsing fails, keep it as is
+            console.error('Error parsing shippingAddress:', e);
+          }
+        }
       }
 
       return sendSuccess(res, orders);
@@ -67,6 +76,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       try {
         await connection.beginTransaction();
 
+        // Stringify shippingAddress if it's an object
+        const shippingAddressStr = typeof shippingAddress === 'string' 
+          ? shippingAddress 
+          : JSON.stringify(shippingAddress);
+
         // Create order
         await connection.execute(
           `INSERT INTO orders (id, user_id, subtotal, shipping, tax, total, status, shipping_address)
@@ -79,7 +93,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             tax,
             total,
             'pending',
-            JSON.stringify(shippingAddress)
+            shippingAddressStr
           ]
         );
 
@@ -88,14 +102,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           await connection.execute(
             `INSERT INTO order_items (order_id, product_id, variant_id, quantity, price)
              VALUES (?, ?, ?, ?, ?)`,
-            [orderId, item.productId, item.variantId, item.quantity, item.price]
+            [orderId, item.productId, item.variantId || null, item.quantity, item.price]
           );
 
-          // Update variant stock
-          await connection.execute(
-            'UPDATE product_variants SET stock = stock - ? WHERE id = ?',
-            [item.quantity, item.variantId]
-          );
+          // Update variant stock if variant specified
+          if (item.variantId) {
+            await connection.execute(
+              'UPDATE product_variants SET stock = stock - ? WHERE id = ?',
+              [item.quantity, item.variantId]
+            );
+          }
 
           // Update product stock
           await connection.execute(
@@ -117,7 +133,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const order = (orders as any[])[0];
         order.items = items;
-        order.shippingAddress = JSON.parse(order.shippingAddress);
+        
+        // Parse shippingAddress if it's a string
+        if (typeof order.shippingAddress === 'string') {
+          try {
+            order.shippingAddress = JSON.parse(order.shippingAddress);
+          } catch (e) {
+            // If parsing fails, keep it as is
+            console.error('Error parsing shippingAddress:', e);
+          }
+        }
 
         return sendSuccess(res, order, 201);
       } catch (error) {
