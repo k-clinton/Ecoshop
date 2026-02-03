@@ -2,8 +2,12 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import pool from '@/lib/db';
 import { hashPassword, generateToken } from '@/lib/auth';
 import { sendSuccess, sendError, handleError, generateId } from '@/lib/utils';
+import { handleCors } from '@/lib/cors';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Handle CORS preflight
+  if (handleCors(req, res)) return;
+
   if (req.method !== 'POST') {
     return sendError(res, 'Method not allowed', 405);
   }

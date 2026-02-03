@@ -1,9 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { handleCors } from '@/lib/cors';
 import pool from '@/lib/db';
 import { sendSuccess, sendError, handleError } from '@/lib/utils';
 import { Product } from '@/lib/types';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (handleCors(req, res)) return;
+
   const { slug } = req.query;
 
   if (req.method === 'GET') {

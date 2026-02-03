@@ -1,9 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { handleCors } from '@/lib/cors';
 import pool from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
 import { sendSuccess, sendError, handleError } from '@/lib/utils';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (handleCors(req, res)) return;
+
   if (req.method !== 'GET') {
     return sendError(res, 'Method not allowed', 405);
   }
@@ -13,16 +16,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Get total products
     const [productCount] = await pool.execute('SELECT COUNT(*) as count FROM products');
-    
+
     // Get total orders
     const [orderCount] = await pool.execute('SELECT COUNT(*) as count FROM orders');
-    
+
     // Get total revenue
     const [revenue] = await pool.execute('SELECT SUM(total) as total FROM orders WHERE status != "cancelled"');
-    
+
     // Get total customers
     const [customerCount] = await pool.execute('SELECT COUNT(*) as count FROM users WHERE role = "customer"');
-    
+
     // Get recent orders
     const [recentOrders] = await pool.execute(
       `SELECT id, user_id as userId, total, status, created_at as createdAt

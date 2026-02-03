@@ -1,15 +1,18 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { handleCors } from '@/lib/cors';
 import pool from '@/lib/db';
 import { requireAuth, requireAdmin } from '@/lib/auth';
 import { sendSuccess, sendError, handleError, generateId } from '@/lib/utils';
 import { Order, CartItem } from '@/lib/types';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (handleCors(req, res)) return;
+
   // GET - List orders (user's own or all if admin)
   if (req.method === 'GET') {
     try {
       const authUser = requireAuth(req);
-      
+
       let query = `
         SELECT id, user_id as userId, subtotal, shipping, tax, total, status,
                shipping_address as shippingAddress, created_at as createdAt,
@@ -38,7 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           [order.id]
         );
         order.items = items;
-        
+
         // Parse shippingAddress if it's a string
         if (typeof order.shippingAddress === 'string') {
           try {
@@ -77,8 +80,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         await connection.beginTransaction();
 
         // Stringify shippingAddress if it's an object
-        const shippingAddressStr = typeof shippingAddress === 'string' 
-          ? shippingAddress 
+        const shippingAddressStr = typeof shippingAddress === 'string'
+          ? shippingAddress
           : JSON.stringify(shippingAddress);
 
         // Create order
@@ -133,7 +136,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const order = (orders as any[])[0];
         order.items = items;
-        
+
         // Parse shippingAddress if it's a string
         if (typeof order.shippingAddress === 'string') {
           try {

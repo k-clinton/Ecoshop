@@ -20,21 +20,28 @@ async function apiCall<T>(
 ): Promise<T> {
   const token = localStorage.getItem('authToken');
   
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...options.headers,
   };
 
+  // Add custom headers from options
+  if (options.headers) {
+    Object.assign(headers, options.headers);
+  }
+
+  // Add authorization token if available
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
   try {
+    console.log(`Making API request to: ${API_BASE_URL}${endpoint}`);
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers,
     });
 
+    console.log(`Response status: ${response.status}`);
     const result: ApiResponse<T> = await response.json();
 
     if (!result.success) {
@@ -43,8 +50,13 @@ async function apiCall<T>(
 
     return result.data as T;
   } catch (error) {
+    console.error('API call error:', error);
     if (error instanceof ApiError) {
       throw error;
+    }
+    // More descriptive error message
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new ApiError(`Cannot connect to API server at ${API_BASE_URL}. Please ensure the backend is running.`);
     }
     throw new ApiError('Network error or server unavailable');
   }

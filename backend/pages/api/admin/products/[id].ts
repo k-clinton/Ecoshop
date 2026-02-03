@@ -1,9 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { handleCors } from '@/lib/cors';
 import pool from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
 import { sendSuccess, sendError, handleError } from '@/lib/utils';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (handleCors(req, res)) return;
+
   try {
     requireAdmin(req);
     const { id } = req.query;
