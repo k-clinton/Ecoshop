@@ -1,0 +1,222 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Eco-friendly earth tones with modern accent */
+    --background: 0 0% 99%;
+    --foreground: 30 10% 10%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 30 10% 10%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 30 10% 10%;
+    
+    /* Earthy green primary */
+    --primary: 152 45% 35%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Warm beige secondary */
+    --secondary: 35 30% 94%;
+    --secondary-foreground: 30 20% 25%;
+    
+    --muted: 30 15% 95%;
+    --muted-foreground: 30 10% 45%;
+    
+    /* Terracotta accent */
+    --accent: 18 70% 55%;
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    
+    --border: 30 15% 90%;
+    --input: 30 15% 90%;
+    --ring: 152 45% 35%;
+    
+    --radius: 0.75rem;
+
+    /* Custom gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(152 45% 35% / 0.1), hsl(35 30% 94% / 0.5));
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(30 15% 98%));
+    --gradient-accent: linear-gradient(135deg, hsl(152 45% 35%), hsl(152 45% 45%));
+  }
+
+  .dark {
+    --background: 30 10% 8%;
+    --foreground: 30 10% 95%;
+    
+    --card: 30 10% 10%;
+    --card-foreground: 30 10% 95%;
+    
+    --popover: 30 10% 10%;
+    --popover-foreground: 30 10% 95%;
+    
+    --primary: 152 45% 45%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 30 10% 15%;
+    --secondary-foreground: 30 10% 90%;
+    
+    --muted: 30 10% 15%;
+    --muted-foreground: 30 10% 60%;
+    
+    --accent: 18 70% 55%;
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 30 10% 18%;
+    --input: 30 10% 18%;
+    --ring: 152 45% 45%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  /* Button variants */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md;
+  }
+
+  .btn-secondary {
+    @apply btn bg-secondary text-secondary-foreground hover:bg-secondary/80;
+  }
+
+  .btn-outline {
+    @apply btn border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground;
+  }
+
+  .btn-ghost {
+    @apply btn hover:bg-muted text-foreground;
+  }
+
+  .btn-accent {
+    @apply btn bg-accent text-accent-foreground hover:bg-accent/90 shadow-sm;
+  }
+
+  .btn-sm {
+    @apply h-9 px-4 text-sm;
+  }
+
+  .btn-md {
+    @apply h-11 px-6 text-base;
+  }
+
+  .btn-lg {
+    @apply h-14 px-8 text-lg;
+  }
+
+  /* Card styles */
+  .card {
+    @apply bg-card text-card-foreground rounded-xl border shadow-soft;
+  }
+
+  .card-hover {
+    @apply card transition-all duration-300 hover:shadow-elevated hover:-translate-y-1;
+  }
+
+  /* Badge styles */
+  .badge {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-medium;
+  }
+
+  .badge-primary {
+    @apply badge bg-primary/10 text-primary;
+  }
+
+  .badge-secondary {
+    @apply badge bg-secondary text-secondary-foreground;
+  }
+
+  .badge-accent {
+    @apply badge bg-accent/10 text-accent;
+  }
+
+  .badge-success {
+    @apply badge bg-success/10 text-success;
+  }
+
+  /* Input styles */
+  .input {
+    @apply flex h-11 w-full rounded-lg border border-input bg-background px-4 py-2 text-base transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  /* Section containers */
+  .section {
+    @apply py-16 md:py-24;
+  }
+
+  .container-wide {
+    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Text styles */
+  .heading-display {
+    @apply font-display font-semibold tracking-tight;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Product card specific */
+  .product-image {
+    @apply aspect-square w-full object-cover rounded-lg bg-muted;
+  }
+
+  /* Skeleton loading */
+  .skeleton {
+    @apply bg-muted animate-pulse rounded-md;
+  }
+
+  /* Overlay styles */
+  .overlay-dark {
+    @apply bg-foreground/80 backdrop-blur-sm;
+  }
+}
+
+@layer utilities {
+  .animate-in {
+    animation: fade-in 0.5s ease-out forwards;
+  }
+
+  .delay-100 {
+    animation-delay: 100ms;
+  }
+
+  .delay-200 {
+    animation-delay: 200ms;
+  }
+
+  .delay-300 {
+    animation-delay: 300ms;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
