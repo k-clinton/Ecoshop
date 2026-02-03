@@ -32,7 +32,7 @@ function StoreLayout({ children }: { children: React.ReactNode }) {
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
         <ToastProvider>
           <CartProvider>
@@ -44,7 +44,7 @@ function App() {
               <Route path="/checkout" element={<StoreLayout><CheckoutPage /></StoreLayout>} />
               <Route path="/signin" element={<StoreLayout><SignInPage /></StoreLayout>} />
               <Route path="/signup" element={<StoreLayout><SignUpPage /></StoreLayout>} />
-              
+
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<AdminDashboard />} />

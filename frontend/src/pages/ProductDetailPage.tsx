@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Star, Minus, Plus, ChevronRight, Truck, RefreshCw, Leaf, Shield } from 'lucide-react'
 import { productService } from '@/services/products'
-import { Product, ProductVariant } from '@/data/types'
+import { categoryService } from '@/services/categories'
+import { Product, ProductVariant, Category } from '@/data/types'
 import { useCart } from '@/store/CartContext'
 import { useToast } from '@/store/ToastContext'
 import { formatPrice, cn } from '@/lib/utils'
@@ -18,23 +19,43 @@ export function ProductDetailPage() {
   const [loading, setLoading] = useState(true)
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | undefined>()
   const [quantity, setQuantity] = useState(1)
+  const [category, setCategory] = useState<Category | null>(null)
 
   useEffect(() => {
     const loadProduct = async () => {
       if (!slug) return
-      
+
       setLoading(true)
       try {
         const prod = await productService.getProductBySlug(slug)
         setProduct(prod)
         setSelectedVariant(prod.variants[0])
-        
-        // Load related products from same category
-        const related = await productService.getProducts({ 
+
+        const related = await productService.getProducts({
           category: prod.category,
-          limit: 4 
+          limit: 4
         })
         setRelatedProducts(related.filter(p => p.id !== prod.id).slice(0, 4))
+
+        // Load category details
+        try {
+          // Assuming product.category holds the slug or matching identifier
+          const categories = await categoryService.getCategories()
+          const foundCategory = categories.find(c => c.slug === prod.category || c.id === prod.category || c.name === prod.category)
+          if (foundCategory) {
+            setCategory(foundCategory)
+          } else {
+            // Fallback if direct fetch is needed or strictly one way
+            try {
+              const cat = await categoryService.getCategoryBySlug(prod.category)
+              setCategory(cat)
+            } catch (e) {
+              console.warn('Could not load category by slug', e)
+            }
+          }
+        } catch (error) {
+          console.warn('Failed to load category details:', error)
+        }
       } catch (error) {
         console.error('Failed to load product:', error)
         setProduct(null)
@@ -42,7 +63,7 @@ export function ProductDetailPage() {
         setLoading(false)
       }
     }
-    
+
     loadProduct()
   }, [slug])
 
