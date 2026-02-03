@@ -17,8 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
        FROM products p
        WHERE p.featured = TRUE
        ORDER BY p.created_at DESC
-       LIMIT ?`,
-      [parseInt(limit as string)]
+       LIMIT ${parseInt(limit as string)}`
     );
 
     const products = rows as any[];

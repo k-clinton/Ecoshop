@@ -40,7 +40,7 @@ const mockData = {
       rating: 4.5,
       reviewCount: 128,
       stock: 225,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
     },
     {
       id: 'prod-bamboo-toothbrush',
@@ -58,7 +58,7 @@ const mockData = {
       rating: 4.8,
       reviewCount: 95,
       stock: 200,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
     },
     {
       id: 'prod-reusable-water-bottle',
@@ -79,7 +79,7 @@ const mockData = {
       rating: 4.7,
       reviewCount: 203,
       stock: 240,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
     }
   ]
 };

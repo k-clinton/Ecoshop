@@ -34,8 +34,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       params.push(`%${search}%`, `%${search}%`);
     }
 
-    query += ' ORDER BY p.created_at DESC LIMIT ? OFFSET ?';
-    params.push(parseInt(limit as string), parseInt(offset as string));
+    const limitNum = parseInt(limit as string);
+    const offsetNum = parseInt(offset as string);
+    query += ` ORDER BY p.created_at DESC LIMIT ${limitNum} OFFSET ${offsetNum}`;
+    // Don't push limit/offset to params array since we're using them directly in query
 
     const [rows] = await pool.execute(query, params);
     const products = rows as any[];
