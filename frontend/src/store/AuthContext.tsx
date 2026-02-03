@@ -1,0 +1,84 @@
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react'
+import { User } from '@/data/types'
+import { authService } from '@/services/auth'
+
+interface AuthState {
+  user: User | null
+  isAuthenticated: boolean
+  isLoading: boolean
+}
+
+interface AuthContextType extends AuthState {
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  signUp: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>
+  signOut: () => void
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<AuthState>({
+    user: null,
+    isAuthenticated: false,
+    isLoading: true,
+  })
+
+  // Check for existing session on mount
+  useEffect(() => {
+    const loadUser = async () => {
+      if (authService.isAuthenticated()) {
+        try {
+          const user = await authService.getCurrentUser()
+          setState({ user, isAuthenticated: true, isLoading: false })
+        } catch (error) {
+          // Token expired or invalid
+          authService.logout()
+          setState({ user: null, isAuthenticated: false, isLoading: false })
+        }
+      } else {
+        setState({ user: null, isAuthenticated: false, isLoading: false })
+      }
+    }
+    
+    loadUser()
+  }, [])
+
+  const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { user } = await authService.login(email, password)
+      setState({ user, isAuthenticated: true, isLoading: false })
+      return { success: true }
+    } catch (error: any) {
+      return { success: false, error: error.message || 'Login failed' }
+    }
+  }
+
+  const signUp = async (email: string, password: string, name: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { user } = await authService.register(email, password, name)
+      setState({ user, isAuthenticated: true, isLoading: false })
+      return { success: true }
+    } catch (error: any) {
+      return { success: false, error: error.message || 'Registration failed' }
+    }
+  }
+
+  const signOut = () => {
+    authService.logout()
+    setState({ user: null, isAuthenticated: false, isLoading: false })
+  }
+
+  return (
+    <AuthContext.Provider value={{ ...state, signIn, signUp, signOut }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider')
+  }
+  return context
+}

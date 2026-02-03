@@ -1,0 +1,40 @@
+import apiCall from './api';
+
+export interface DashboardStats {
+  totalProducts: number;
+  totalOrders: number;
+  totalRevenue: number;
+  totalCustomers: number;
+  recentOrders: any[];
+  lowStockProducts: any[];
+}
+
+export const adminService = {
+  // Get dashboard statistics
+  async getStats(): Promise<DashboardStats> {
+    return apiCall<DashboardStats>('/admin/stats');
+  },
+
+  // Create product
+  async createProduct(productData: any): Promise<any> {
+    return apiCall<any>('/admin/products', {
+      method: 'POST',
+      body: JSON.stringify(productData),
+    });
+  },
+
+  // Update product
+  async updateProduct(productId: string, productData: any): Promise<any> {
+    return apiCall<any>(`/admin/products/${productId}`, {
+      method: 'PUT',
+      body: JSON.stringify(productData),
+    });
+  },
+
+  // Delete product
+  async deleteProduct(productId: string): Promise<any> {
+    return apiCall<any>(`/admin/products/${productId}`, {
+      method: 'DELETE',
+    });
+  }
+};
