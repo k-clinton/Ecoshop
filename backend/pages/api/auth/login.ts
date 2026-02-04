@@ -22,16 +22,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Find user
     const [users] = await pool.execute(
-      'SELECT id, email, password, name, role FROM users WHERE email = ?',
+      'SELECT id, email, password, name, role, email_verified, oauth_provider FROM users WHERE email = ?',
       [email]
     );
 
-    const userArray = users as DBUser[];
+    const userArray = users as any[];
     if (userArray.length === 0) {
       return sendError(res, 'Invalid credentials', 401);
     }
 
     const user = userArray[0];
+
+    // Check if user registered with OAuth
+    if (user.oauth_provider) {
+      return sendError(res, `Please sign in with ${user.oauth_provider}`, 400);
+    }
 
     // Verify password
     const isValid = await verifyPassword(password, user.password);
@@ -39,12 +44,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return sendError(res, 'Invalid credentials', 401);
     }
 
-    // Generate token
+    // Check email verification
+    if (!user.email_verified) {
+      return sendError(res, 'Please verify your email before logging in', 403);
+    }
+
+    // Update last activity
+    await pool.execute(
+      'UPDATE users SET last_activity = CURRENT_TIMESTAMP WHERE id = ?',
+      [user.id]
+    );
+
+    // Generate token with 10-minute expiry
     const token = generateToken({
       userId: user.id,
       email: user.email,
       role: user.role
-    });
+    }, '10m');
 
     return sendSuccess(res, {
       token,

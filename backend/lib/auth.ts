@@ -8,6 +8,8 @@ export interface JWTPayload {
   userId: string;
   email: string;
   role: 'customer' | 'admin';
+  iat?: number;
+  exp?: number;
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -18,16 +20,29 @@ export async function verifyPassword(password: string, hashedPassword: string): 
   return bcrypt.compare(password, hashedPassword);
 }
 
-export function generateToken(payload: JWTPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+export function generateToken(payload: JWTPayload, expiresIn: string = '10m'): string {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn });
 }
 
 export function verifyToken(token: string): JWTPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as JWTPayload;
+    const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+    // Check if token is expired (10 minute session timeout)
+    if (decoded.iat && decoded.exp) {
+      const now = Math.floor(Date.now() / 1000);
+      if (now > decoded.exp) {
+        return null;
+      }
+    }
+    return decoded;
   } catch (error) {
     return null;
   }
+}
+
+export function refreshToken(payload: JWTPayload): string {
+  // Generate new token with 10 minute expiry for session extension
+  return generateToken(payload, '10m');
 }
 
 export function getAuthUser(req: NextApiRequest): JWTPayload | null {

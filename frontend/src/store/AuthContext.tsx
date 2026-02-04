@@ -10,7 +10,10 @@ interface AuthState {
 
 interface AuthContextType extends AuthState {
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
-  signUp: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>
+  signUp: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string; userId?: string; email?: string; requiresVerification?: boolean }>
+  verifyEmail: (userId: string, code: string) => Promise<{ success: boolean; error?: string }>
+  resendCode: (email: string) => Promise<{ success: boolean; error?: string }>
+  signInWithGoogle: (credential: string) => Promise<{ success: boolean; error?: string }>
   signOut: () => void
 }
 
@@ -30,6 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const user = await authService.getCurrentUser()
           setState({ user, isAuthenticated: true, isLoading: false })
+          authService.startSessionMonitor()
         } catch (error) {
           // Token expired or invalid
           authService.logout()
@@ -41,6 +45,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     
     loadUser()
+    
+    // Cleanup on unmount
+    return () => {
+      authService.stopSessionMonitor()
+    }
   }, [])
 
   const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
@@ -53,13 +62,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const signUp = async (email: string, password: string, name: string): Promise<{ success: boolean; error?: string }> => {
+  const signUp = async (email: string, password: string, name: string): Promise<{ success: boolean; error?: string; userId?: string; email?: string; requiresVerification?: boolean }> => {
     try {
-      const { user } = await authService.register(email, password, name)
+      const data = await authService.register(email, password, name)
+      return { success: true, userId: data.userId, email: data.email, requiresVerification: data.requiresVerification }
+    } catch (error: any) {
+      return { success: false, error: error.message || 'Registration failed' }
+    }
+  }
+
+  const verifyEmail = async (userId: string, code: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { user } = await authService.verifyEmail(userId, code)
       setState({ user, isAuthenticated: true, isLoading: false })
       return { success: true }
     } catch (error: any) {
-      return { success: false, error: error.message || 'Registration failed' }
+      return { success: false, error: error.message || 'Verification failed' }
+    }
+  }
+
+  const resendCode = async (email: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await authService.resendVerificationCode(email)
+      return { success: true }
+    } catch (error: any) {
+      return { success: false, error: error.message || 'Failed to resend code' }
+    }
+  }
+
+  const signInWithGoogle = async (credential: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { user } = await authService.googleSignIn(credential)
+      setState({ user, isAuthenticated: true, isLoading: false })
+      return { success: true }
+    } catch (error: any) {
+      return { success: false, error: error.message || 'Google sign in failed' }
     }
   }
 
@@ -69,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ ...state, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ ...state, signIn, signUp, verifyEmail, resendCode, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   )

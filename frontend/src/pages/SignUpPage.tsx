@@ -4,10 +4,11 @@ import { Leaf, Eye, EyeOff, Loader2, Check } from 'lucide-react'
 import { useAuth } from '@/store/AuthContext'
 import { useToast } from '@/store/ToastContext'
 import { cn } from '@/lib/utils'
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google'
 
 export function SignUpPage() {
   const navigate = useNavigate()
-  const { signUp } = useAuth()
+  const { signUp, signInWithGoogle } = useAuth()
   const { addToast } = useToast()
   
   const [name, setName] = useState('')
@@ -54,11 +55,36 @@ export function SignUpPage() {
     setIsLoading(false)
     
     if (result.success) {
-      addToast('Account created successfully!', 'success')
-      navigate('/')
+      if (result.requiresVerification) {
+        addToast('Please check your email for verification code', 'success')
+        navigate(`/verify-email?userId=${result.userId}&email=${result.email}`)
+      } else {
+        addToast('Account created successfully!', 'success')
+        navigate('/')
+      }
     } else {
       setError(result.error || 'Sign up failed')
     }
+  }
+
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    setError('')
+    setIsLoading(true)
+    
+    const result = await signInWithGoogle(credentialResponse.credential)
+    
+    setIsLoading(false)
+    
+    if (result.success) {
+      addToast('Account created successfully!', 'success')
+      navigate('/')
+    } else {
+      setError(result.error || 'Google sign up failed')
+    }
+  }
+  
+  const handleGoogleError = () => {
+    setError('Google sign up failed. Please try again.')
   }
 
   return (
@@ -190,6 +216,30 @@ export function SignUpPage() {
               )}
             </button>
           </form>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="bg-background px-4 text-muted-foreground">Or continue with</span>
+            </div>
+          </div>
+
+          <div className="flex justify-center">
+            <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ''}>
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                useOneTap
+                text="signup_with"
+                shape="rectangular"
+                theme="outline"
+                size="large"
+                width="100%"
+              />
+            </GoogleOAuthProvider>
+          </div>
 
           <div className="mt-6 text-center text-sm text-muted-foreground">
             Already have an account?{' '}

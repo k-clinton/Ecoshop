@@ -98,11 +98,24 @@ async function seedDatabase() {
 
     console.log('Connected to database');
 
+    // Clear existing data (in correct order to respect foreign keys)
+    console.log('Clearing existing data...');
+    await connection.execute('DELETE FROM order_items');
+    await connection.execute('DELETE FROM orders');
+    await connection.execute('DELETE FROM email_verification_codes');
+    await connection.execute('DELETE FROM users');
+    await connection.execute('DELETE FROM product_variants');
+    await connection.execute('DELETE FROM product_tags');
+    await connection.execute('DELETE FROM product_images');
+    await connection.execute('DELETE FROM products');
+    await connection.execute('DELETE FROM categories');
+    console.log('✓ Cleared existing data');
+
     // Seed Categories
     console.log('Seeding categories...');
     for (const category of mockData.categories) {
       await connection.execute(
-        'INSERT INTO categories (id, name, slug, image, description) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE name=VALUES(name)',
+        'INSERT INTO categories (id, name, slug, image, description) VALUES (?, ?, ?, ?, ?)',
         [category.id, category.name, category.slug, category.image, category.description]
       );
     }
@@ -114,8 +127,7 @@ async function seedDatabase() {
       // Insert product
       await connection.execute(
         `INSERT INTO products (id, name, slug, description, price, compare_at_price, category, featured, rating, review_count, stock, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-         ON DUPLICATE KEY UPDATE name=VALUES(name), price=VALUES(price)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           product.id,
           product.name,
@@ -135,7 +147,7 @@ async function seedDatabase() {
       // Insert images
       for (let i = 0; i < product.images.length; i++) {
         await connection.execute(
-          'INSERT INTO product_images (product_id, image_url, sort_order) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE image_url=VALUES(image_url)',
+          'INSERT INTO product_images (product_id, image_url, sort_order) VALUES (?, ?, ?)',
           [product.id, product.images[i], i]
         );
       }
@@ -143,7 +155,7 @@ async function seedDatabase() {
       // Insert tags
       for (const tag of product.tags) {
         await connection.execute(
-          'INSERT INTO product_tags (product_id, tag) VALUES (?, ?) ON DUPLICATE KEY UPDATE tag=VALUES(tag)',
+          'INSERT INTO product_tags (product_id, tag) VALUES (?, ?)',
           [product.id, tag]
         );
       }
@@ -152,8 +164,7 @@ async function seedDatabase() {
       for (const variant of product.variants) {
         await connection.execute(
           `INSERT INTO product_variants (id, product_id, name, sku, price, stock, available)
-           VALUES (?, ?, ?, ?, ?, ?, ?)
-           ON DUPLICATE KEY UPDATE price=VALUES(price), stock=VALUES(stock)`,
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
           [variant.id, product.id, variant.name, variant.sku, variant.price, variant.stock, variant.available]
         );
       }
@@ -162,24 +173,13 @@ async function seedDatabase() {
 
     // Create default admin user
     console.log('Creating default admin user...');
-    const hashedPassword = await bcrypt.hash('admin123', 10);
+    const hashedPassword = await bcrypt.hash('Admin@2024', 10);
     await connection.execute(
-      `INSERT INTO users (id, email, password, name, role)
-       VALUES (?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE email=VALUES(email)`,
-      ['user-admin', 'admin@ecoshop.com', hashedPassword, 'Admin User', 'admin']
+      `INSERT INTO users (id, email, password, name, role, email_verified)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      ['user-admin', 'omondiclinn@gmail.com', hashedPassword, 'Admin User', 'admin', true]
     );
-    console.log('✓ Created admin user (email: admin@ecoshop.com, password: admin123)');
-
-    // Create default customer user
-    const customerPassword = await bcrypt.hash('customer123', 10);
-    await connection.execute(
-      `INSERT INTO users (id, email, password, name, role)
-       VALUES (?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE email=VALUES(email)`,
-      ['user-customer', 'customer@ecoshop.com', customerPassword, 'Customer User', 'customer']
-    );
-    console.log('✓ Created customer user (email: customer@ecoshop.com, password: customer123)');
+    console.log('✓ Created admin user (email: omondiclinn@gmail.com, password: Admin@2024)');
 
     console.log('\n✅ Database seeded successfully!');
     

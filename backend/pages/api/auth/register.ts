@@ -1,8 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import pool from '@/lib/db';
-import { hashPassword, generateToken } from '@/lib/auth';
+import { hashPassword } from '@/lib/auth';
 import { sendSuccess, sendError, handleError, generateId } from '@/lib/utils';
 import { handleCors } from '@/lib/cors';
+import { sendVerificationEmail, generateVerificationCode } from '@/lib/email';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Handle CORS preflight
@@ -32,24 +33,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Hash password
     const hashedPassword = await hashPassword(password);
 
-    // Create user
+    // Create user (not verified yet)
     const userId = generateId();
     await pool.execute(
-      'INSERT INTO users (id, email, password, name, role) VALUES (?, ?, ?, ?, ?)',
-      [userId, email, hashedPassword, name, 'customer']
+      'INSERT INTO users (id, email, password, name, role, email_verified) VALUES (?, ?, ?, ?, ?, ?)',
+      [userId, email, hashedPassword, name, 'customer', false]
     );
 
-    // Generate token
-    const token = generateToken({ userId, email, role: 'customer' });
+    // Generate and store verification code
+    const verificationCode = generateVerificationCode();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+
+    await pool.execute(
+      'INSERT INTO email_verification_codes (user_id, code, expires_at) VALUES (?, ?, ?)',
+      [userId, verificationCode, expiresAt]
+    );
+
+    // Send verification email
+    try {
+      await sendVerificationEmail(email, verificationCode, name);
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError);
+      // Continue anyway - user can request a new code
+    }
 
     return sendSuccess(res, {
-      token,
-      user: {
-        id: userId,
-        email,
-        name,
-        role: 'customer'
-      }
+      message: 'Registration successful. Please check your email for verification code.',
+      userId,
+      email,
+      requiresVerification: true
     }, 201);
   } catch (error) {
     return handleError(res, error);

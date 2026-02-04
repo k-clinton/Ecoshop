@@ -1,13 +1,15 @@
-import React, { useState } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { Leaf, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { useAuth } from '@/store/AuthContext'
 import { useToast } from '@/store/ToastContext'
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google'
 
 export function SignInPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { signIn } = useAuth()
+  const [searchParams] = useSearchParams()
+  const { signIn, signInWithGoogle } = useAuth()
   const { addToast } = useToast()
   
   const [email, setEmail] = useState('')
@@ -17,6 +19,13 @@ export function SignInPage() {
   const [error, setError] = useState('')
 
   const from = (location.state as { from?: string })?.from || '/'
+  
+  useEffect(() => {
+    const sessionExpired = searchParams.get('session_expired')
+    if (sessionExpired) {
+      addToast('Your session has expired. Please sign in again.', 'error')
+    }
+  }, [searchParams, addToast])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,6 +42,26 @@ export function SignInPage() {
     } else {
       setError(result.error || 'Sign in failed')
     }
+  }
+  
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    setError('')
+    setIsLoading(true)
+    
+    const result = await signInWithGoogle(credentialResponse.credential)
+    
+    setIsLoading(false)
+    
+    if (result.success) {
+      addToast('Welcome!', 'success')
+      navigate(from, { replace: true })
+    } else {
+      setError(result.error || 'Google sign in failed')
+    }
+  }
+  
+  const handleGoogleError = () => {
+    setError('Google sign in failed. Please try again.')
   }
 
   return (
@@ -120,18 +149,36 @@ export function SignInPage() {
             </button>
           </form>
 
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="bg-background px-4 text-muted-foreground">Or continue with</span>
+            </div>
+          </div>
+
+          <div className="flex justify-center">
+            <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ''}>
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                useOneTap
+                text="signin_with"
+                shape="rectangular"
+                theme="outline"
+                size="large"
+                width="100%"
+              />
+            </GoogleOAuthProvider>
+          </div>
+
           <div className="mt-6 text-center text-sm text-muted-foreground">
             Don't have an account?{' '}
             <Link to="/signup" className="text-primary font-medium hover:underline">
               Sign up
             </Link>
           </div>
-        </div>
-
-        <div className="mt-6 p-4 rounded-lg bg-muted/50 text-sm">
-          <p className="font-medium mb-2">Demo Accounts:</p>
-          <p className="text-muted-foreground">Admin: admin@ecoshop.com / admin123</p>
-          <p className="text-muted-foreground">Customer: customer@ecoshop.com / customer123</p>
         </div>
       </div>
     </main>
