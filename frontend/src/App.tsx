@@ -14,6 +14,7 @@ import { CheckoutPage } from '@/pages/CheckoutPage'
 import { SignInPage } from '@/pages/SignInPage'
 import { SignUpPage } from '@/pages/SignUpPage'
 import VerifyEmailPage from '@/pages/VerifyEmailPage'
+import { AccountPage } from '@/pages/AccountPage'
 import { AdminLayout } from '@/pages/admin/AdminLayout'
 import { AdminDashboard } from '@/pages/admin/AdminDashboard'
 import { AdminProducts } from '@/pages/admin/AdminProducts'
@@ -46,6 +47,7 @@ function App() {
               <Route path="/signin" element={<StoreLayout><SignInPage /></StoreLayout>} />
               <Route path="/signup" element={<StoreLayout><SignUpPage /></StoreLayout>} />
               <Route path="/verify-email" element={<StoreLayout><VerifyEmailPage /></StoreLayout>} />
+              <Route path="/account" element={<StoreLayout><AccountPage /></StoreLayout>} />
 
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLayout />}>
