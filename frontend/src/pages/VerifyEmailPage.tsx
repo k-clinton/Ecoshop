@@ -7,7 +7,7 @@ export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { verifyEmail, resendCode } = useAuth()
-  const { showToast } = useToast()
+  const { addToast } = useToast()
   
   const [code, setCode] = useState(['', '', '', '', '', ''])
   const [isLoading, setIsLoading] = useState(false)
@@ -66,29 +66,25 @@ export default function VerifyEmailPage() {
     const verificationCode = code.join('')
     
     if (verificationCode.length !== 6) {
-      showToast('Please enter all 6 digits', 'error')
+      addToast('Please enter all 6 digits', 'error')
       return
     }
 
     setIsLoading(true)
 
     try {
-      console.log('Verifying email with userId:', userId, 'code:', verificationCode)
       const result = await verifyEmail(userId, verificationCode)
-      console.log('Verification result:', result)
 
       if (result.success) {
-        showToast('Email verified successfully!', 'success')
-        console.log('Navigating to home page...')
+        addToast('Email verified successfully!', 'success')
         navigate('/')
       } else {
-        showToast(result.error || 'Verification failed', 'error')
+        addToast(result.error || 'Verification failed', 'error')
         setCode(['', '', '', '', '', ''])
         document.getElementById('code-0')?.focus()
       }
     } catch (error) {
-      console.error('Verification error:', error)
-      showToast('Verification failed', 'error')
+      addToast('Verification failed', 'error')
     } finally {
       setIsLoading(false)
     }
@@ -100,9 +96,9 @@ export default function VerifyEmailPage() {
     const result = await resendCode(email)
     
     if (result.success) {
-      showToast('Verification code sent!', 'success')
+      addToast('Verification code sent!', 'success')
     } else {
-      showToast(result.error || 'Failed to resend code', 'error')
+      addToast(result.error || 'Failed to resend code', 'error')
     }
     
     setIsResending(false)

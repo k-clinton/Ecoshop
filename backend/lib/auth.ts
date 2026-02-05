@@ -58,7 +58,9 @@ export function getAuthUser(req: NextApiRequest): JWTPayload | null {
 export function requireAuth(req: NextApiRequest): JWTPayload {
   const user = getAuthUser(req);
   if (!user) {
-    throw new Error('Unauthorized');
+    const error = new Error('Unauthorized') as any;
+    error.statusCode = 401;
+    throw error;
   }
   return user;
 }
@@ -66,7 +68,9 @@ export function requireAuth(req: NextApiRequest): JWTPayload {
 export function requireAdmin(req: NextApiRequest): JWTPayload {
   const user = requireAuth(req);
   if (user.role !== 'admin') {
-    throw new Error('Forbidden: Admin access required');
+    const error = new Error('Forbidden: Admin access required') as any;
+    error.statusCode = 403;
+    throw error;
   }
   return user;
 }

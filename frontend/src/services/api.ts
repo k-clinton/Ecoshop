@@ -35,13 +35,23 @@ async function apiCall<T>(
   }
 
   try {
-    console.log(`Making API request to: ${API_BASE_URL}${endpoint}`);
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers,
     });
 
-    console.log(`Response status: ${response.status}`);
+    // Handle session expiration gracefully
+    if (response.status === 401) {
+      // Clear token and trigger silent logout
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('lastActivity');
+      
+      // Dispatch a custom event for auth context to handle
+      window.dispatchEvent(new CustomEvent('auth:session-expired'));
+      
+      throw new ApiError('Session expired', 401);
+    }
+
     const result: ApiResponse<T> = await response.json();
 
     if (!result.success) {
@@ -50,7 +60,6 @@ async function apiCall<T>(
 
     return result.data as T;
   } catch (error) {
-    console.error('API call error:', error);
     if (error instanceof ApiError) {
       throw error;
     }

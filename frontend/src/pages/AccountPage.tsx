@@ -1,18 +1,27 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { User, Package, MapPin, CreditCard, Bell, Shield, LogOut, Mail } from 'lucide-react'
+import { User, Package, MapPin, CreditCard, Bell, Shield, LogOut, Mail, Edit2, Trash2, Plus } from 'lucide-react'
 import { useAuth } from '@/store/AuthContext'
 import { useToast } from '@/store/ToastContext'
 import { orderService } from '@/services/orders'
+import { profileService, type Address } from '@/services/profile'
+import { EditProfileModal } from '@/components/EditProfileModal'
+import { ChangePasswordModal } from '@/components/ChangePasswordModal'
+import { AddressModal } from '@/components/AddressModal'
 import type { Order } from '@/data/types'
 
 export function AccountPage() {
-  const { user, signOut, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, updateUser } = useAuth()
   const { addToast } = useToast()
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<'profile' | 'orders' | 'settings'>('profile')
+  const [activeTab, setActiveTab] = useState<'profile' | 'orders' | 'addresses' | 'settings'>('profile')
   const [orders, setOrders] = useState<Order[]>([])
+  const [addresses, setAddresses] = useState<Address[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [showEditProfile, setShowEditProfile] = useState(false)
+  const [showChangePassword, setShowChangePassword] = useState(false)
+  const [showAddressModal, setShowAddressModal] = useState(false)
+  const [editingAddress, setEditingAddress] = useState<Address | undefined>(undefined)
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -23,6 +32,8 @@ export function AccountPage() {
   useEffect(() => {
     if (activeTab === 'orders' && isAuthenticated) {
       loadOrders()
+    } else if (activeTab === 'addresses' && isAuthenticated) {
+      loadAddresses()
     }
   }, [activeTab, isAuthenticated])
 
@@ -35,6 +46,67 @@ export function AccountPage() {
       addToast(error.message || 'Failed to load orders', 'error')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const loadAddresses = async () => {
+    setIsLoading(true)
+    try {
+      const data = await profileService.getAddresses()
+      setAddresses(data)
+    } catch (error: any) {
+      addToast(error.message || 'Failed to load addresses', 'error')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleUpdateProfile = async (name: string, email: string) => {
+    try {
+      const { user: updatedUser } = await profileService.updateProfile({ name, email })
+      updateUser(updatedUser)
+      addToast('Profile updated successfully', 'success')
+    } catch (error: any) {
+      addToast(error.message || 'Failed to update profile', 'error')
+      throw error
+    }
+  }
+
+  const handleChangePassword = async (currentPassword: string, newPassword: string) => {
+    try {
+      await profileService.changePassword({ currentPassword, newPassword })
+      addToast('Password changed successfully', 'success')
+    } catch (error: any) {
+      addToast(error.message || 'Failed to change password', 'error')
+      throw error
+    }
+  }
+
+  const handleSaveAddress = async (addressData: Partial<Address>) => {
+    try {
+      if (editingAddress) {
+        await profileService.updateAddress(editingAddress.id, addressData)
+        addToast('Address updated successfully', 'success')
+      } else {
+        await profileService.createAddress(addressData as any)
+        addToast('Address added successfully', 'success')
+      }
+      loadAddresses()
+    } catch (error: any) {
+      addToast(error.message || 'Failed to save address', 'error')
+      throw error
+    }
+  }
+
+  const handleDeleteAddress = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this address?')) return
+
+    try {
+      await profileService.deleteAddress(id)
+      addToast('Address deleted successfully', 'success')
+      loadAddresses()
+    } catch (error: any) {
+      addToast(error.message || 'Failed to delete address', 'error')
     }
   }
 
@@ -73,6 +145,7 @@ export function AccountPage() {
   const tabs = [
     { id: 'profile' as const, label: 'Profile', icon: User },
     { id: 'orders' as const, label: 'Orders', icon: Package },
+    { id: 'addresses' as const, label: 'Addresses', icon: MapPin },
     { id: 'settings' as const, label: 'Settings', icon: Shield },
   ]
 
@@ -136,7 +209,7 @@ export function AccountPage() {
                 )
               })}
               <button
-                onClick={signOut}
+                onClick={() => {}}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors mt-2"
               >
                 <LogOut className="h-4 w-4" />
@@ -151,7 +224,16 @@ export function AccountPage() {
               <div className="space-y-6">
                 {/* Personal Information */}
                 <div className="bg-card rounded-xl border p-6">
-                  <h3 className="font-semibold text-lg mb-4">Personal Information</h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-lg">Personal Information</h3>
+                    <button
+                      onClick={() => setShowEditProfile(true)}
+                      className="flex items-center gap-2 text-primary hover:text-primary/80 text-sm font-medium"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                      Edit
+                    </button>
+                  </div>
                   <div className="space-y-4">
                     <div className="flex items-start gap-3">
                       <User className="h-5 w-5 text-muted-foreground mt-0.5" />
@@ -167,27 +249,6 @@ export function AccountPage() {
                         <p className="font-medium">{user?.email}</p>
                       </div>
                     </div>
-                  </div>
-                </div>
-
-                {/* Quick Actions */}
-                <div className="bg-card rounded-xl border p-6">
-                  <h3 className="font-semibold text-lg mb-4">Quick Actions</h3>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <button className="flex items-center gap-3 p-4 rounded-lg border hover:border-primary hover:bg-primary/5 transition-colors text-left">
-                      <MapPin className="h-5 w-5 text-primary" />
-                      <div>
-                        <p className="font-medium text-sm">Manage Addresses</p>
-                        <p className="text-xs text-muted-foreground">Add or edit addresses</p>
-                      </div>
-                    </button>
-                    <button className="flex items-center gap-3 p-4 rounded-lg border hover:border-primary hover:bg-primary/5 transition-colors text-left">
-                      <CreditCard className="h-5 w-5 text-primary" />
-                      <div>
-                        <p className="font-medium text-sm">Payment Methods</p>
-                        <p className="text-xs text-muted-foreground">Manage payment options</p>
-                      </div>
-                    </button>
                   </div>
                 </div>
 
@@ -284,8 +345,112 @@ export function AccountPage() {
               </div>
             )}
 
+            {activeTab === 'addresses' && (
+              <div className="bg-card rounded-xl border">
+                <div className="p-6 border-b flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-lg">Saved Addresses</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Manage your shipping addresses
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setEditingAddress(undefined)
+                      setShowAddressModal(true)
+                    }}
+                    className="btn-primary flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Address
+                  </button>
+                </div>
+                <div className="p-6">
+                  {isLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                  ) : addresses.length === 0 ? (
+                    <div className="text-center py-12">
+                      <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h4 className="font-semibold text-lg mb-2">No addresses saved</h4>
+                      <p className="text-muted-foreground mb-6">
+                        Add an address to make checkout faster
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {addresses.map((address) => (
+                        <div
+                          key={address.id}
+                          className={`border rounded-lg p-4 relative ${
+                            address.isDefault ? 'border-primary bg-primary/5' : ''
+                          }`}
+                        >
+                          {address.isDefault && (
+                            <span className="absolute top-3 right-3 px-2 py-1 bg-primary text-primary-foreground text-xs font-medium rounded">
+                              Default
+                            </span>
+                          )}
+                          <div className="pr-16">
+                            <p className="font-semibold mb-2">{address.name}</p>
+                            <div className="text-sm text-muted-foreground space-y-1">
+                              <p>{address.street}</p>
+                              <p>
+                                {address.city}, {address.state} {address.zip}
+                              </p>
+                              <p>{address.country}</p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 mt-4">
+                            <button
+                              onClick={() => {
+                                setEditingAddress(address)
+                                setShowAddressModal(true)
+                              }}
+                              className="flex items-center gap-1 text-sm text-primary hover:text-primary/80"
+                            >
+                              <Edit2 className="h-3 w-3" />
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteAddress(address.id)}
+                              className="flex items-center gap-1 text-sm text-destructive hover:text-destructive/80"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {activeTab === 'settings' && (
               <div className="space-y-6">
+                {/* Security */}
+                <div className="bg-card rounded-xl border p-6">
+                  <h3 className="font-semibold text-lg mb-4">Security</h3>
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => setShowChangePassword(true)}
+                      className="w-full flex items-center justify-between p-4 rounded-lg border hover:border-primary hover:bg-primary/5 transition-colors"
+                    >
+                      <div className="flex items-center gap-3 text-left">
+                        <Shield className="h-5 w-5 text-primary" />
+                        <div>
+                          <p className="font-medium text-sm">Change Password</p>
+                          <p className="text-xs text-muted-foreground">Update your password</p>
+                        </div>
+                      </div>
+                      <span className="text-muted-foreground">→</span>
+                    </button>
+                  </div>
+                </div>
+
                 {/* Notifications */}
                 <div className="bg-card rounded-xl border p-6">
                   <h3 className="font-semibold text-lg mb-4">Notifications</h3>
@@ -316,39 +481,38 @@ export function AccountPage() {
                     </label>
                   </div>
                 </div>
-
-                {/* Security */}
-                <div className="bg-card rounded-xl border p-6">
-                  <h3 className="font-semibold text-lg mb-4">Security</h3>
-                  <div className="space-y-3">
-                    <button className="w-full flex items-center justify-between p-4 rounded-lg border hover:border-primary hover:bg-primary/5 transition-colors">
-                      <div className="flex items-center gap-3 text-left">
-                        <Shield className="h-5 w-5 text-primary" />
-                        <div>
-                          <p className="font-medium text-sm">Change Password</p>
-                          <p className="text-xs text-muted-foreground">Update your password</p>
-                        </div>
-                      </div>
-                      <span className="text-muted-foreground">→</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Danger Zone */}
-                <div className="bg-card rounded-xl border border-destructive/20 p-6">
-                  <h3 className="font-semibold text-lg text-destructive mb-4">Danger Zone</h3>
-                  <button className="btn-outline border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground w-full sm:w-auto">
-                    Delete Account
-                  </button>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    This action cannot be undone
-                  </p>
-                </div>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      {showEditProfile && (
+        <EditProfileModal
+          user={user}
+          onClose={() => setShowEditProfile(false)}
+          onSave={handleUpdateProfile}
+        />
+      )}
+
+      {showChangePassword && (
+        <ChangePasswordModal
+          onClose={() => setShowChangePassword(false)}
+          onSave={handleChangePassword}
+        />
+      )}
+
+      {showAddressModal && (
+        <AddressModal
+          address={editingAddress}
+          onClose={() => {
+            setShowAddressModal(false)
+            setEditingAddress(undefined)
+          }}
+          onSave={handleSaveAddress}
+        />
+      )}
     </div>
   )
 }

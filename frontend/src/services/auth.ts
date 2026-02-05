@@ -26,15 +26,12 @@ export const authService = {
 
   // Verify email with code
   async verifyEmail(userId: string, code: string): Promise<AuthResponse> {
-    console.log('authService: verifyEmail called', { userId, code });
     const data = await apiCall<AuthResponse>('/auth/verify-email', {
       method: 'POST',
       body: JSON.stringify({ userId, code }),
     });
     
-    console.log('authService: verifyEmail data received:', data);
     localStorage.setItem('authToken', data.token);
-    console.log('authService: Token saved, starting session monitor');
     this.startSessionMonitor();
     return data;
   },
@@ -104,7 +101,7 @@ export const authService = {
   },
 
   // Session monitoring (10 minute timeout)
-  sessionTimeoutInterval: null as NodeJS.Timeout | null,
+  sessionTimeoutInterval: null as number | null,
   
   startSessionMonitor() {
     this.updateActivity();
@@ -117,14 +114,14 @@ export const authService = {
         const tenMinutes = 10 * 60 * 1000;
         
         if (timeSinceActivity >= tenMinutes) {
-          // Session expired
+          // Session expired - silently log out
           this.logout();
-          window.location.href = '/signin?session_expired=true';
+          window.dispatchEvent(new CustomEvent('auth:session-expired'));
         } else if (timeSinceActivity >= 8 * 60 * 1000) {
           // 8 minutes - refresh token
           this.refreshToken().catch(() => {
             this.logout();
-            window.location.href = '/signin?session_expired=true';
+            window.dispatchEvent(new CustomEvent('auth:session-expired'));
           });
         }
       }

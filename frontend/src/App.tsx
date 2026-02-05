@@ -7,6 +7,7 @@ import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
 import { CartDrawer } from '@/components/CartDrawer'
 import { ToastContainer } from '@/components/ToastContainer'
+import { SessionExpiredNotice } from '@/components/SessionExpiredNotice'
 import { HomePage } from '@/pages/HomePage'
 import { ProductsPage } from '@/pages/ProductsPage'
 import { ProductDetailPage } from '@/pages/ProductDetailPage'
@@ -15,6 +16,7 @@ import { SignInPage } from '@/pages/SignInPage'
 import { SignUpPage } from '@/pages/SignUpPage'
 import VerifyEmailPage from '@/pages/VerifyEmailPage'
 import { AccountPage } from '@/pages/AccountPage'
+import { OrderDetailPage } from '@/pages/OrderDetailPage'
 import { AdminLayout } from '@/pages/admin/AdminLayout'
 import { AdminDashboard } from '@/pages/admin/AdminDashboard'
 import { AdminProducts } from '@/pages/admin/AdminProducts'
@@ -48,6 +50,7 @@ function App() {
               <Route path="/signup" element={<StoreLayout><SignUpPage /></StoreLayout>} />
               <Route path="/verify-email" element={<StoreLayout><VerifyEmailPage /></StoreLayout>} />
               <Route path="/account" element={<StoreLayout><AccountPage /></StoreLayout>} />
+              <Route path="/orders/:id" element={<StoreLayout><OrderDetailPage /></StoreLayout>} />
 
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLayout />}>
@@ -58,6 +61,7 @@ function App() {
               </Route>
             </Routes>
             <ToastContainer />
+            <SessionExpiredNotice />
           </CartProvider>
         </ToastProvider>
       </AuthProvider>

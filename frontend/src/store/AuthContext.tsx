@@ -14,6 +14,7 @@ interface AuthContextType extends AuthState {
   verifyEmail: (userId: string, code: string) => Promise<{ success: boolean; error?: string }>
   resendCode: (email: string) => Promise<{ success: boolean; error?: string }>
   signInWithGoogle: (credential: string) => Promise<{ success: boolean; error?: string }>
+  updateUser: (user: User) => void
   signOut: () => void
 }
 
@@ -35,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setState({ user, isAuthenticated: true, isLoading: false })
           authService.startSessionMonitor()
         } catch (error) {
-          // Token expired or invalid
+          // Token expired or invalid - silently log out
           authService.logout()
           setState({ user: null, isAuthenticated: false, isLoading: false })
         }
@@ -46,9 +47,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     loadUser()
     
+    // Listen for session expiration events
+    const handleSessionExpired = () => {
+      setState({ user: null, isAuthenticated: false, isLoading: false })
+    }
+    
+    window.addEventListener('auth:session-expired', handleSessionExpired)
+    
     // Cleanup on unmount
     return () => {
       authService.stopSessionMonitor()
+      window.removeEventListener('auth:session-expired', handleSessionExpired)
     }
   }, [])
 
@@ -73,15 +82,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const verifyEmail = async (userId: string, code: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      console.log('AuthContext: verifyEmail called with userId:', userId)
       const response = await authService.verifyEmail(userId, code)
-      console.log('AuthContext: verifyEmail response:', response)
       const { user } = response
-      console.log('AuthContext: Setting user state:', user)
       setState({ user, isAuthenticated: true, isLoading: false })
       return { success: true }
     } catch (error: any) {
-      console.error('AuthContext: verifyEmail error:', error)
       return { success: false, error: error.message || 'Verification failed' }
     }
   }
@@ -105,13 +110,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const updateUser = (user: User) => {
+    setState(prev => ({ ...prev, user }))
+  }
+
   const signOut = () => {
     authService.logout()
     setState({ user: null, isAuthenticated: false, isLoading: false })
   }
 
   return (
-    <AuthContext.Provider value={{ ...state, signIn, signUp, verifyEmail, resendCode, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ ...state, signIn, signUp, verifyEmail, resendCode, signInWithGoogle, updateUser, signOut }}>
       {children}
     </AuthContext.Provider>
   )
