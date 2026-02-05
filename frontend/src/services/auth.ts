@@ -26,12 +26,15 @@ export const authService = {
 
   // Verify email with code
   async verifyEmail(userId: string, code: string): Promise<AuthResponse> {
+    console.log('authService: verifyEmail called', { userId, code });
     const data = await apiCall<AuthResponse>('/auth/verify-email', {
       method: 'POST',
       body: JSON.stringify({ userId, code }),
     });
     
+    console.log('authService: verifyEmail data received:', data);
     localStorage.setItem('authToken', data.token);
+    console.log('authService: Token saved, starting session monitor');
     this.startSessionMonitor();
     return data;
   },

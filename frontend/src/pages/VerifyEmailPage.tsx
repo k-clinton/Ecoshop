@@ -72,18 +72,26 @@ export default function VerifyEmailPage() {
 
     setIsLoading(true)
 
-    const result = await verifyEmail(userId, verificationCode)
+    try {
+      console.log('Verifying email with userId:', userId, 'code:', verificationCode)
+      const result = await verifyEmail(userId, verificationCode)
+      console.log('Verification result:', result)
 
-    if (result.success) {
-      showToast('Email verified successfully!', 'success')
-      navigate('/')
-    } else {
-      showToast(result.error || 'Verification failed', 'error')
-      setCode(['', '', '', '', '', ''])
-      document.getElementById('code-0')?.focus()
+      if (result.success) {
+        showToast('Email verified successfully!', 'success')
+        console.log('Navigating to home page...')
+        navigate('/')
+      } else {
+        showToast(result.error || 'Verification failed', 'error')
+        setCode(['', '', '', '', '', ''])
+        document.getElementById('code-0')?.focus()
+      }
+    } catch (error) {
+      console.error('Verification error:', error)
+      showToast('Verification failed', 'error')
+    } finally {
+      setIsLoading(false)
     }
-
-    setIsLoading(false)
   }
 
   const handleResendCode = async () => {

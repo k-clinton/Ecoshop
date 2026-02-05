@@ -73,10 +73,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const verifyEmail = async (userId: string, code: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { user } = await authService.verifyEmail(userId, code)
+      console.log('AuthContext: verifyEmail called with userId:', userId)
+      const response = await authService.verifyEmail(userId, code)
+      console.log('AuthContext: verifyEmail response:', response)
+      const { user } = response
+      console.log('AuthContext: Setting user state:', user)
       setState({ user, isAuthenticated: true, isLoading: false })
       return { success: true }
     } catch (error: any) {
+      console.error('AuthContext: verifyEmail error:', error)
       return { success: false, error: error.message || 'Verification failed' }
     }
   }
