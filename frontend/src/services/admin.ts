@@ -49,5 +49,16 @@ export const adminService = {
       method: 'PATCH',
       body: JSON.stringify({ adjustment }),
     });
+  },
+
+  // Upload product image
+  async uploadImage(file: File): Promise<{ url: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return apiCall<{ url: string }>('/admin/upload', {
+      method: 'POST',
+      body: formData,
+    });
   }
 };

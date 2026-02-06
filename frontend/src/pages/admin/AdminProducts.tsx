@@ -99,7 +99,7 @@ export function AdminProducts() {
     if (!confirm(`Are you sure you want to delete "${product.name}"?`)) {
       return
     }
-    
+
     try {
       await adminService.deleteProduct(product.id)
       setProducts(products.filter(p => p.id !== product.id))
@@ -130,30 +130,40 @@ export function AdminProducts() {
     })
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0]
-      // Create a temporary URL for the uploaded image
-      const imageUrl = URL.createObjectURL(file)
-      setFormData({
-        ...formData,
-        images: [...formData.images, imageUrl]
-      })
+      try {
+        const { url } = await adminService.uploadImage(file)
+        setFormData(prev => ({
+          ...prev,
+          images: [...prev.images, url]
+        }))
+        addToast('Image uploaded successfully', 'success')
+      } catch (error) {
+        console.error('Failed to upload image:', error)
+        addToast('Failed to upload image', 'error')
+      }
     }
   }
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
     setDragActive(false)
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0]
-      // Create a temporary URL for the dropped image
-      const imageUrl = URL.createObjectURL(file)
-      setFormData({
-        ...formData,
-        images: [...formData.images, imageUrl]
-      })
+      try {
+        const { url } = await adminService.uploadImage(file)
+        setFormData(prev => ({
+          ...prev,
+          images: [...prev.images, url]
+        }))
+        addToast('Image uploaded successfully', 'success')
+      } catch (error) {
+        console.error('Failed to upload image:', error)
+        addToast('Failed to upload image', 'error')
+      }
     }
   }
 
@@ -192,21 +202,21 @@ export function AdminProducts() {
         featured: formData.featured,
         images: formData.images.length > 0 ? formData.images : ['/images/product-blank.jpg'],
         tags: formData.tags,
-        variants: formData.variants.length > 0 
+        variants: formData.variants.length > 0
           ? formData.variants.map(v => ({
-              name: v.name,
-              sku: v.sku,
-              price: v.price,
-              stock: v.stock,
-              available: v.stock > 0,
-            }))
+            name: v.name,
+            sku: v.sku,
+            price: v.price,
+            stock: v.stock,
+            available: v.stock > 0,
+          }))
           : [{
-              name: 'Default',
-              sku: `SKU-${Date.now()}`,
-              price: formData.price,
-              stock: formData.stock,
-              available: formData.stock > 0,
-            }],
+            name: 'Default',
+            sku: `SKU-${Date.now()}`,
+            price: formData.price,
+            stock: formData.stock,
+            available: formData.stock > 0,
+          }],
         rating: 0,
         reviewCount: 0,
       }
@@ -220,10 +230,10 @@ export function AdminProducts() {
         await adminService.createProduct(productData)
         addToast('Product created successfully!', 'success')
       }
-      
+
       // Reload products from API
       await loadProducts()
-      
+
       setIsModalOpen(false)
       setEditingProduct(null)
     } catch (error) {
@@ -239,7 +249,7 @@ export function AdminProducts() {
           <h1 className="text-2xl font-semibold text-foreground">Products</h1>
           <p className="text-muted-foreground">Manage your product catalog</p>
         </div>
-        <button 
+        <button
           onClick={() => { setEditingProduct(null); setIsModalOpen(true) }}
           className="btn-primary btn-md"
         >
@@ -344,13 +354,13 @@ export function AdminProducts() {
                     </td>
                     <td className="p-4">
                       <div className="flex items-center justify-end gap-2">
-                        <button 
+                        <button
                           onClick={() => handleEdit(product)}
                           className="btn-ghost p-2"
                         >
                           <Edit2 className="h-4 w-4" />
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleDelete(product)}
                           className="btn-ghost p-2 text-destructive hover:bg-destructive/10"
                         >
@@ -375,7 +385,7 @@ export function AdminProducts() {
               <h2 className="text-xl font-semibold">
                 {editingProduct ? 'Edit Product' : 'Add New Product'}
               </h2>
-              <button 
+              <button
                 onClick={() => setIsModalOpen(false)}
                 className="btn-ghost p-2"
               >
@@ -386,51 +396,51 @@ export function AdminProducts() {
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-medium mb-2">Product Name *</label>
-                  <input 
-                    type="text" 
-                    className="input" 
+                  <input
+                    type="text"
+                    className="input"
                     value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="Enter product name"
                   />
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-medium mb-2">Description</label>
-                  <textarea 
-                    className="input min-h-[100px]" 
+                  <textarea
+                    className="input min-h-[100px]"
                     value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     placeholder="Enter product description"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">Price *</label>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     step="0.01"
-                    className="input" 
+                    className="input"
                     value={formData.price}
-                    onChange={(e) => setFormData({...formData, price: parseFloat(e.target.value) || 0})}
+                    onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
                     placeholder="0.00"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">Compare at Price</label>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     step="0.01"
-                    className="input" 
+                    className="input"
                     value={formData.compareAtPrice}
-                    onChange={(e) => setFormData({...formData, compareAtPrice: parseFloat(e.target.value) || 0})}
+                    onChange={(e) => setFormData({ ...formData, compareAtPrice: parseFloat(e.target.value) || 0 })}
                     placeholder="0.00"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">Category *</label>
-                  <select 
-                    className="input" 
+                  <select
+                    className="input"
                     value={formData.category}
-                    onChange={(e) => setFormData({...formData, category: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   >
                     <option value="">Select category</option>
                     {categories.map(c => (
@@ -440,31 +450,31 @@ export function AdminProducts() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">Default Stock</label>
-                  <input 
-                    type="number" 
-                    className="input" 
+                  <input
+                    type="number"
+                    className="input"
                     value={formData.stock}
-                    onChange={(e) => setFormData({...formData, stock: parseInt(e.target.value) || 0})}
+                    onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })}
                     placeholder="0"
                   />
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-medium mb-2">Tags</label>
-                  <input 
-                    type="text" 
-                    className="input" 
+                  <input
+                    type="text"
+                    className="input"
                     value={formData.tags.join(', ')}
-                    onChange={(e) => setFormData({...formData, tags: e.target.value.split(',').map(tag => tag.trim()).filter(Boolean)})}
+                    onChange={(e) => setFormData({ ...formData, tags: e.target.value.split(',').map(tag => tag.trim()).filter(Boolean) })}
                     placeholder="eco-friendly, sustainable, organic"
                   />
                 </div>
                 <div className="sm:col-span-2">
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      className="rounded" 
+                    <input
+                      type="checkbox"
+                      className="rounded"
                       checked={formData.featured}
-                      onChange={(e) => setFormData({...formData, featured: e.target.checked})}
+                      onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
                     />
                     <span className="text-sm font-medium">Featured Product</span>
                   </label>
@@ -478,53 +488,53 @@ export function AdminProducts() {
                   {formData.variants.map((variant, index) => (
                     <div key={index} className="flex items-center gap-2 p-3 border rounded-lg">
                       <div className="flex-1 grid grid-cols-4 gap-2">
-                        <input 
-                          type="text" 
-                          className="input text-sm" 
+                        <input
+                          type="text"
+                          className="input text-sm"
                           value={variant.name}
                           onChange={(e) => {
                             const newVariants = [...formData.variants]
                             newVariants[index].name = e.target.value
-                            setFormData({...formData, variants: newVariants})
+                            setFormData({ ...formData, variants: newVariants })
                           }}
                           placeholder="Variant name"
                         />
-                        <input 
-                          type="text" 
-                          className="input text-sm" 
+                        <input
+                          type="text"
+                          className="input text-sm"
                           value={variant.sku}
                           onChange={(e) => {
                             const newVariants = [...formData.variants]
                             newVariants[index].sku = e.target.value
-                            setFormData({...formData, variants: newVariants})
+                            setFormData({ ...formData, variants: newVariants })
                           }}
                           placeholder="SKU"
                         />
-                        <input 
-                          type="number" 
+                        <input
+                          type="number"
                           step="0.01"
-                          className="input text-sm" 
+                          className="input text-sm"
                           value={variant.price}
                           onChange={(e) => {
                             const newVariants = [...formData.variants]
                             newVariants[index].price = parseFloat(e.target.value) || 0
-                            setFormData({...formData, variants: newVariants})
+                            setFormData({ ...formData, variants: newVariants })
                           }}
                           placeholder="Price"
                         />
-                        <input 
-                          type="number" 
-                          className="input text-sm" 
+                        <input
+                          type="number"
+                          className="input text-sm"
                           value={variant.stock}
                           onChange={(e) => {
                             const newVariants = [...formData.variants]
                             newVariants[index].stock = parseInt(e.target.value) || 0
-                            setFormData({...formData, variants: newVariants})
+                            setFormData({ ...formData, variants: newVariants })
                           }}
                           placeholder="Stock"
                         />
                       </div>
-                      <button 
+                      <button
                         onClick={() => handleRemoveVariant(index)}
                         className="btn-ghost p-2 text-destructive"
                       >
@@ -532,38 +542,38 @@ export function AdminProducts() {
                       </button>
                     </div>
                   ))}
-                  
+
                   <div className="flex gap-2 pt-2">
-                    <input 
-                      type="text" 
-                      className="input flex-1 text-sm" 
+                    <input
+                      type="text"
+                      className="input flex-1 text-sm"
                       value={newVariant.name}
-                      onChange={(e) => setNewVariant({...newVariant, name: e.target.value})}
+                      onChange={(e) => setNewVariant({ ...newVariant, name: e.target.value })}
                       placeholder="Variant name (e.g. Small, Large)"
                     />
-                    <input 
-                      type="text" 
-                      className="input w-32 text-sm" 
+                    <input
+                      type="text"
+                      className="input w-32 text-sm"
                       value={newVariant.sku}
-                      onChange={(e) => setNewVariant({...newVariant, sku: e.target.value})}
+                      onChange={(e) => setNewVariant({ ...newVariant, sku: e.target.value })}
                       placeholder="SKU"
                     />
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       step="0.01"
-                      className="input w-24 text-sm" 
+                      className="input w-24 text-sm"
                       value={newVariant.price}
-                      onChange={(e) => setNewVariant({...newVariant, price: parseFloat(e.target.value) || 0})}
+                      onChange={(e) => setNewVariant({ ...newVariant, price: parseFloat(e.target.value) || 0 })}
                       placeholder="Price"
                     />
-                    <input 
-                      type="number" 
-                      className="input w-24 text-sm" 
+                    <input
+                      type="number"
+                      className="input w-24 text-sm"
                       value={newVariant.stock}
-                      onChange={(e) => setNewVariant({...newVariant, stock: parseInt(e.target.value) || 0})}
+                      onChange={(e) => setNewVariant({ ...newVariant, stock: parseInt(e.target.value) || 0 })}
                       placeholder="Stock"
                     />
-                    <button 
+                    <button
                       onClick={handleAddVariant}
                       className="btn-primary btn-sm"
                     >
@@ -576,20 +586,19 @@ export function AdminProducts() {
               {/* Image Upload Section */}
               <div className="sm:col-span-2">
                 <label className="block text-sm font-medium mb-2">Product Images</label>
-                <div 
-                  className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                    dragActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
-                  }`}
+                <div
+                  className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${dragActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
+                    }`}
                   onDragEnter={handleDrag}
                   onDragLeave={handleDrag}
                   onDragOver={handleDrag}
                   onDrop={handleDrop}
                 >
-                  <input 
-                    type="file" 
-                    className="hidden" 
-                    id="image-upload" 
-                    accept="image/*" 
+                  <input
+                    type="file"
+                    className="hidden"
+                    id="image-upload"
+                    accept="image/*"
                     onChange={handleImageUpload}
                   />
                   <label htmlFor="image-upload" className="cursor-pointer">
@@ -606,9 +615,9 @@ export function AdminProducts() {
                     <div className="flex flex-wrap gap-2">
                       {formData.images.map((image, index) => (
                         <div key={index} className="relative group">
-                          <img 
-                            src={image} 
-                            alt={`Preview ${index + 1}`} 
+                          <img
+                            src={image}
+                            alt={`Preview ${index + 1}`}
                             className="h-20 w-20 rounded-lg object-cover border"
                           />
                           <button

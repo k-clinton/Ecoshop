@@ -19,10 +19,13 @@ async function apiCall<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const token = localStorage.getItem('authToken');
-  
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
+
+  const headers: Record<string, string> = {};
+
+  // Set default Content-Type to application/json unless body is FormData
+  if (!(options.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   // Add custom headers from options
   if (options.headers) {
@@ -45,10 +48,10 @@ async function apiCall<T>(
       // Clear token and trigger silent logout
       localStorage.removeItem('authToken');
       localStorage.removeItem('lastActivity');
-      
+
       // Dispatch a custom event for auth context to handle
       window.dispatchEvent(new CustomEvent('auth:session-expired'));
-      
+
       throw new ApiError('Session expired', 401);
     }
 
