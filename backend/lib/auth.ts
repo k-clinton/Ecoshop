@@ -20,14 +20,14 @@ export async function verifyPassword(password: string, hashedPassword: string): 
   return bcrypt.compare(password, hashedPassword);
 }
 
-export function generateToken(payload: JWTPayload, expiresIn: string = '10m'): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn });
+export function generateToken(payload: JWTPayload, expiresIn: string = '15m'): string {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn } as jwt.SignOptions);
 }
 
 export function verifyToken(token: string): JWTPayload | null {
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
-    // Check if token is expired (10 minute session timeout)
+    // Check if token is expired (15 minute session timeout)
     if (decoded.iat && decoded.exp) {
       const now = Math.floor(Date.now() / 1000);
       if (now > decoded.exp) {
@@ -41,8 +41,8 @@ export function verifyToken(token: string): JWTPayload | null {
 }
 
 export function refreshToken(payload: JWTPayload): string {
-  // Generate new token with 10 minute expiry for session extension
-  return generateToken(payload, '10m');
+  // Generate new token with 15 minute expiry for session extension
+  return generateToken(payload, '15m');
 }
 
 export function getAuthUser(req: NextApiRequest): JWTPayload | null {
@@ -50,7 +50,7 @@ export function getAuthUser(req: NextApiRequest): JWTPayload | null {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return null;
   }
-  
+
   const token = authHeader.substring(7);
   return verifyToken(token);
 }

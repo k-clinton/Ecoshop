@@ -22,6 +22,8 @@ import { AdminDashboard } from '@/pages/admin/AdminDashboard'
 import { AdminProducts } from '@/pages/admin/AdminProducts'
 import { AdminOrders } from '@/pages/admin/AdminOrders'
 import { AdminInventory } from '@/pages/admin/AdminInventory'
+import { AdminCustomers } from '@/pages/admin/AdminCustomers'
+import { AdminSettings } from '@/pages/admin/AdminSettings'
 
 function StoreLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -58,6 +60,8 @@ function App() {
                 <Route path="products" element={<AdminProducts />} />
                 <Route path="orders" element={<AdminOrders />} />
                 <Route path="inventory" element={<AdminInventory />} />
+                <Route path="customers" element={<AdminCustomers />} />
+                <Route path="settings" element={<AdminSettings />} />
               </Route>
             </Routes>
             <ToastContainer />
