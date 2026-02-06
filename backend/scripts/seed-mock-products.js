@@ -3,22 +3,8 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
-// Category mapping from frontend to backend IDs
-const categoryMap = {
-  'home': 'cat-home',
-  'beauty': 'cat-beauty',
-  'fashion': 'cat-eco-fashion',
-  'kitchen': 'cat-kitchen',
-  'appliances': 'cat-appliances',
-  'books': 'cat-books',
-  'sports': 'cat-sports',
-  'phones': 'cat-phones',
-  'clothes': 'cat-clothes',
-  'bags': 'cat-bags',
-  'watches': 'cat-watches',
-  'health': 'cat-health',
-  'computers': 'cat-computers'
-};
+// Category mapping not needed as IDs match now
+// const categoryMap = { ... };
 
 async function seedMockProducts() {
   const pool = mysql.createPool({
@@ -49,11 +35,11 @@ async function seedMockProducts() {
 
     for (const product of mockProducts) {
       const connection = await pool.getConnection();
-      
+
       try {
         await connection.beginTransaction();
 
-        const mappedCategory = categoryMap[product.category] || product.category;
+        const mappedCategory = product.category;
         process.stdout.write(`[${product.id.padStart(2, '0')}] ${product.name.padEnd(40, ' ')} ... `);
 
         // Insert or update product
@@ -124,7 +110,7 @@ async function seedMockProducts() {
     console.log(`║  Success: ${successCount.toString().padEnd(28, ' ')} ║`);
     console.log(`║  Failed:  ${failCount.toString().padEnd(28, ' ')} ║`);
     console.log('╚════════════════════════════════════════╝\n');
-    
+
     await pool.end();
 
   } catch (error) {
