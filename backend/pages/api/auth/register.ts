@@ -35,9 +35,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Create user (not verified yet)
     const userId = generateId();
+    // Determine role (check if email matches admin email in env)
+    const isAdmin = process.env.ADMIN_EMAIL && email.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase();
+    const role = isAdmin ? 'admin' : 'customer';
+
     await pool.execute(
       'INSERT INTO users (id, email, password, name, role, email_verified) VALUES (?, ?, ?, ?, ?, ?)',
-      [userId, email, hashedPassword, name, 'customer', false]
+      [userId, email, hashedPassword, name, role, false]
     );
 
     // Generate and store verification code
