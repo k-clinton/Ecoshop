@@ -41,5 +41,13 @@ export const adminService = {
     return apiCall<any>(`/admin/products/${productId}`, {
       method: 'DELETE',
     });
+  },
+
+  // Adjust product stock
+  async adjustStock(productId: string, adjustment: number): Promise<any> {
+    return apiCall<any>(`/admin/products/${productId}/stock`, {
+      method: 'PATCH',
+      body: JSON.stringify({ adjustment }),
+    });
   }
 };

@@ -1,14 +1,35 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Search, AlertTriangle, Plus, Minus, Save } from 'lucide-react'
-import { products, categories } from '@/data/mockData'
+import { categories } from '@/data/mockData'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/store/ToastContext'
+import { adminService } from '@/services/admin'
 
 export function AdminInventory() {
   const { addToast } = useToast()
   const [searchQuery, setSearchQuery] = useState('')
   const [stockFilter, setStockFilter] = useState<string>('')
   const [adjustments, setAdjustments] = useState<Record<string, number>>({})
+  const [products, setProducts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Load products from API
+  useEffect(() => {
+    loadProducts()
+  }, [])
+
+  const loadProducts = async () => {
+    try {
+      setLoading(true)
+      const data = await adminService.getProducts()
+      setProducts(data)
+    } catch (error) {
+      console.error('Failed to load products:', error)
+      addToast('Failed to load products', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -26,14 +47,32 @@ export function AdminInventory() {
     }))
   }
 
-  const handleSave = (productId: string) => {
+  const handleSave = async (productId: string) => {
     const adjustment = adjustments[productId]
     if (adjustment) {
-      addToast(`Stock updated: ${adjustment > 0 ? '+' : ''}${adjustment} units`, 'success')
-      setAdjustments(prev => {
-        const { [productId]: _, ...rest } = prev
-        return rest
-      })
+      try {
+        const result = await adminService.adjustStock(productId, adjustment)
+        
+        // Update local state with new stock value
+        setProducts(prevProducts => 
+          prevProducts.map(p => 
+            p.id === productId 
+              ? { ...p, stock: result.newStock }
+              : p
+          )
+        )
+        
+        addToast(`Stock updated: ${adjustment > 0 ? '+' : ''}${adjustment} units`, 'success')
+        
+        // Clear the adjustment for this product
+        setAdjustments(prev => {
+          const { [productId]: _, ...rest } = prev
+          return rest
+        })
+      } catch (error) {
+        console.error('Failed to adjust stock:', error)
+        addToast('Failed to update stock', 'error')
+      }
     }
   }
 
@@ -105,7 +144,20 @@ export function AdminInventory() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {filteredProducts.map((product) => {
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                    Loading inventory...
+                  </td>
+                </tr>
+              ) : filteredProducts.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                    No products found
+                  </td>
+                </tr>
+              ) : null}
+              {!loading && filteredProducts.map((product) => {
                 const category = categories.find(c => c.id === product.category)
                 const adjustment = adjustments[product.id] || 0
                 const newStock = product.stock + adjustment
