@@ -16,6 +16,7 @@ export function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
+  const [priceRanges, setPriceRanges] = useState<string[]>([])
 
   const selectedCategory = searchParams.get('category')
   const searchQuery = searchParams.get('search') || ''
@@ -40,15 +41,15 @@ export function ProductsPage() {
       try {
         const category = categories.find(c => c.slug === selectedCategory)
         const filters: any = {}
-        
+
         if (selectedCategory && category) {
           filters.category = category.id
         }
-        
+
         if (searchQuery) {
           filters.search = searchQuery
         }
-        
+
         const prods = await productService.getProducts(filters)
         setProducts(prods)
       } catch (error) {
@@ -57,7 +58,7 @@ export function ProductsPage() {
         setLoading(false)
       }
     }
-    
+
     if (categories.length > 0 || !selectedCategory) {
       loadProducts()
     }
@@ -65,6 +66,26 @@ export function ProductsPage() {
 
   const filteredProducts = useMemo(() => {
     let result = [...products]
+
+    // Filter by price ranges
+    if (priceRanges.length > 0) {
+      result = result.filter(product => {
+        return priceRanges.some(range => {
+          switch (range) {
+            case 'under-25':
+              return product.price < 25
+            case '25-50':
+              return product.price >= 25 && product.price < 50
+            case '50-100':
+              return product.price >= 50 && product.price < 100
+            case 'over-100':
+              return product.price >= 100
+            default:
+              return false
+          }
+        })
+      })
+    }
 
     // Sort
     switch (sortBy) {
@@ -86,7 +107,7 @@ export function ProductsPage() {
     }
 
     return result
-  }, [products, sortBy])
+  }, [products, sortBy, priceRanges])
 
   const handleCategoryChange = (categorySlug: string | null) => {
     if (categorySlug) {
@@ -95,6 +116,16 @@ export function ProductsPage() {
       searchParams.delete('category')
     }
     setSearchParams(searchParams)
+  }
+
+  const handlePriceRangeChange = (range: string) => {
+    setPriceRanges(prev => {
+      if (prev.includes(range)) {
+        return prev.filter(r => r !== range)
+      } else {
+        return [...prev, range]
+      }
+    })
   }
 
   const currentCategory = categories.find(c => c.slug === selectedCategory)
@@ -154,19 +185,39 @@ export function ProductsPage() {
                 <h3 className="font-semibold mb-3">Price Range</h3>
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input type="checkbox" className="rounded border-input" />
+                    <input
+                      type="checkbox"
+                      className="rounded border-input"
+                      checked={priceRanges.includes('under-25')}
+                      onChange={() => handlePriceRangeChange('under-25')}
+                    />
                     <span>Under $25</span>
                   </label>
                   <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input type="checkbox" className="rounded border-input" />
+                    <input
+                      type="checkbox"
+                      className="rounded border-input"
+                      checked={priceRanges.includes('25-50')}
+                      onChange={() => handlePriceRangeChange('25-50')}
+                    />
                     <span>$25 - $50</span>
                   </label>
                   <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input type="checkbox" className="rounded border-input" />
+                    <input
+                      type="checkbox"
+                      className="rounded border-input"
+                      checked={priceRanges.includes('50-100')}
+                      onChange={() => handlePriceRangeChange('50-100')}
+                    />
                     <span>$50 - $100</span>
                   </label>
                   <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input type="checkbox" className="rounded border-input" />
+                    <input
+                      type="checkbox"
+                      className="rounded border-input"
+                      checked={priceRanges.includes('over-100')}
+                      onChange={() => handlePriceRangeChange('over-100')}
+                    />
                     <span>Over $100</span>
                   </label>
                 </div>
@@ -203,6 +254,19 @@ export function ProductsPage() {
                     <X className="h-3 w-3" />
                   </button>
                 )}
+                {priceRanges.map(range => (
+                  <button
+                    key={range}
+                    onClick={() => handlePriceRangeChange(range)}
+                    className="badge-secondary flex items-center gap-1"
+                  >
+                    {range === 'under-25' && 'Under $25'}
+                    {range === '25-50' && '$25 - $50'}
+                    {range === '50-100' && '$50 - $100'}
+                    {range === 'over-100' && 'Over $100'}
+                    <X className="h-3 w-3" />
+                  </button>
+                ))}
               </div>
 
               <div className="flex items-center gap-2">
@@ -253,6 +317,7 @@ export function ProductsPage() {
                     handleCategoryChange(null)
                     searchParams.delete('search')
                     setSearchParams(searchParams)
+                    setPriceRanges([])
                   }}
                   className="btn-primary btn-sm"
                 >
@@ -319,6 +384,48 @@ export function ProductsPage() {
                       </li>
                     ))}
                   </ul>
+                </div>
+
+                <div className="border-t pt-6">
+                  <h3 className="font-semibold mb-3">Price Range</h3>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="rounded border-input"
+                        checked={priceRanges.includes('under-25')}
+                        onChange={() => handlePriceRangeChange('under-25')}
+                      />
+                      <span>Under $25</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="rounded border-input"
+                        checked={priceRanges.includes('25-50')}
+                        onChange={() => handlePriceRangeChange('25-50')}
+                      />
+                      <span>$25 - $50</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="rounded border-input"
+                        checked={priceRanges.includes('50-100')}
+                        onChange={() => handlePriceRangeChange('50-100')}
+                      />
+                      <span>$50 - $100</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="rounded border-input"
+                        checked={priceRanges.includes('over-100')}
+                        onChange={() => handlePriceRangeChange('over-100')}
+                      />
+                      <span>Over $100</span>
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
