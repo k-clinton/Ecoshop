@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Save } from 'lucide-react'
 import { useToast } from '@/store/ToastContext'
 import { useSettings } from '@/store/SettingsContext'
@@ -6,6 +6,8 @@ import { useSettings } from '@/store/SettingsContext'
 export function AdminSettings() {
     const { addToast } = useToast()
     const { settings, updateSettings } = useSettings()
+    const [isSaving, setIsSaving] = useState(false)
+    const isSavingRef = useRef(false)
 
     // Local state for form
     const [formData, setFormData] = useState({
@@ -18,8 +20,9 @@ export function AdminSettings() {
     })
 
     // Load settings into local state when they are available
+    // But don't reset if we're currently saving
     useEffect(() => {
-        if (settings) {
+        if (settings && !isSavingRef.current) {
             setFormData({
                 site_name: settings.site_name,
                 support_email: settings.support_email,
@@ -44,11 +47,19 @@ export function AdminSettings() {
 
     const handleSave = async () => {
         try {
+            setIsSaving(true)
+            isSavingRef.current = true
             await updateSettings(formData);
             addToast('Settings saved successfully', 'success')
         } catch (error) {
             console.error('Failed to save settings:', error)
             addToast('Failed to save settings', 'error')
+        } finally {
+            setIsSaving(false)
+            // Delay clearing the flag to ensure settings update completes
+            setTimeout(() => {
+                isSavingRef.current = false
+            }, 500)
         }
     }
 
@@ -74,6 +85,7 @@ export function AdminSettings() {
                                 className="input"
                                 value={formData.site_name}
                                 onChange={handleChange}
+                                disabled={isSaving}
                             />
                         </div>
                         <div>
@@ -84,6 +96,7 @@ export function AdminSettings() {
                                 className="input"
                                 value={formData.support_email}
                                 onChange={handleChange}
+                                disabled={isSaving}
                             />
                         </div>
                         <div>
@@ -93,6 +106,7 @@ export function AdminSettings() {
                                 className="input"
                                 value={formData.currency}
                                 onChange={handleChange}
+                                disabled={isSaving}
                             >
                                 <option value="USD">USD ($)</option>
                                 <option value="EUR">EUR (€)</option>
@@ -115,6 +129,7 @@ export function AdminSettings() {
                                 className="input"
                                 value={formData.shipping_fee}
                                 onChange={handleChange}
+                                disabled={isSaving}
                             />
                         </div>
                         <div>
@@ -126,6 +141,7 @@ export function AdminSettings() {
                                 className="input"
                                 value={formData.free_shipping_threshold}
                                 onChange={handleChange}
+                                disabled={isSaving}
                             />
                         </div>
                     </div>
@@ -142,6 +158,7 @@ export function AdminSettings() {
                             className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                             checked={formData.maintenance_mode}
                             onChange={handleChange}
+                            disabled={isSaving}
                         />
                         <label htmlFor="maintenance_mode" className="text-sm font-medium">Enable Maintenance Mode</label>
                     </div>
@@ -151,9 +168,13 @@ export function AdminSettings() {
                 </div>
 
                 <div className="flex justify-end">
-                    <button onClick={handleSave} className="btn-primary btn-md">
+                    <button
+                        onClick={handleSave}
+                        className="btn-primary btn-md"
+                        disabled={isSaving}
+                    >
                         <Save className="h-4 w-4 mr-2" />
-                        Save Changes
+                        {isSaving ? 'Saving...' : 'Save Changes'}
                     </button>
                 </div>
             </div>
