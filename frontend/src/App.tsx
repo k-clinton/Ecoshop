@@ -50,8 +50,8 @@ function App() {
                 <Route path="/products" element={<StoreLayout><ProductsPage /></StoreLayout>} />
                 <Route path="/products/:slug" element={<StoreLayout><ProductDetailPage /></StoreLayout>} />
                 <Route path="/checkout" element={<StoreLayout><CheckoutPage /></StoreLayout>} />
-                <Route path="/signin" element={<StoreLayout><SignInPage /></StoreLayout>} />
-                <Route path="/signup" element={<StoreLayout><SignUpPage /></StoreLayout>} />
+                <Route path="/signin" element={<SignInPage />} />
+                <Route path="/signup" element={<SignUpPage />} />
                 <Route path="/verify-email" element={<StoreLayout><VerifyEmailPage /></StoreLayout>} />
                 <Route path="/account" element={<StoreLayout><AccountPage /></StoreLayout>} />
                 <Route path="/orders/:id" element={<StoreLayout><OrderDetailPage /></StoreLayout>} />
