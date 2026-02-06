@@ -35,25 +35,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const user = await authService.getCurrentUser()
           setState({ user, isAuthenticated: true, isLoading: false })
           authService.startSessionMonitor()
-        } catch (error) {
-          // Token expired or invalid - silently log out
-          authService.logout()
+        } catch (error: any) {
+          console.error('Failed to load user:', error);
+          // Only log out if specifically unauthorized or forbidden
+          if (error.status === 401 || error.status === 403 || error.message === 'Session expired') {
+            authService.logout()
+          }
+          // For other errors (network, server), we stop loading but don't necessarily clear token immediately
+          // giving the user a chance to refresh or retry.
+          // However, if we can't load the user, the app might not render correctly.
+          // Setting isAuthenticated: false will redirect to login in protected routes.
           setState({ user: null, isAuthenticated: false, isLoading: false })
         }
       } else {
         setState({ user: null, isAuthenticated: false, isLoading: false })
       }
     }
-    
+
     loadUser()
-    
+
     // Listen for session expiration events
     const handleSessionExpired = () => {
       setState({ user: null, isAuthenticated: false, isLoading: false })
     }
-    
+
     window.addEventListener('auth:session-expired', handleSessionExpired)
-    
+
     // Cleanup on unmount
     return () => {
       authService.stopSessionMonitor()

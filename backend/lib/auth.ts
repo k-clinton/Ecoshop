@@ -31,11 +31,13 @@ export function verifyToken(token: string): JWTPayload | null {
     if (decoded.iat && decoded.exp) {
       const now = Math.floor(Date.now() / 1000);
       if (now > decoded.exp) {
+        console.log('Token expired:', { now, exp: decoded.exp });
         return null;
       }
     }
     return decoded;
   } catch (error) {
+    console.error('Token verification failed:', error);
     return null;
   }
 }
