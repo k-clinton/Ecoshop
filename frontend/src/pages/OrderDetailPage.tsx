@@ -1,21 +1,25 @@
+
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, Package, MapPin, CreditCard, Truck, CheckCircle, Clock } from 'lucide-react'
+import { ArrowLeft, Package, MapPin, Truck, CheckCircle, Clock, AlertCircle, CreditCard, XCircle } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { useAuth } from '@/store/AuthContext'
 import { useToast } from '@/store/ToastContext'
-import { orderService } from '@/services/orders'
+import { useSettings } from '@/store/SettingsContext'
+import apiCall from '@/services/api'
 import type { Order } from '@/data/types'
 
 export function OrderDetailPage() {
-  const { id } = useParams<{ id: string }>()
+  const { id: orderId } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { isAuthenticated } = useAuth()
+  const { user } = useAuth()
   const { addToast } = useToast()
+  const { formatPrice } = useSettings()
   const [order, setOrder] = useState<Order | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!user) { // Changed from !isAuthenticated
       navigate('/signin')
       return
     }
@@ -48,12 +52,7 @@ export function OrderDetailPage() {
     })
   }
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(price)
-  }
+  // formatPrice removed to use context
 
   const getStatusInfo = (status: string) => {
     switch (status) {

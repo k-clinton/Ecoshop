@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react'
 import { Plus, Search, Edit2, Trash2, MoreVertical, Image as ImageIcon, X, Upload } from 'lucide-react'
 import { categories } from '@/data/mockData'
 import { Product, ProductVariant } from '@/data/types'
-import { formatPrice, cn } from '@/lib/utils'
+import { formatPrice as formatPriceUtils, cn } from '@/lib/utils'
 import { useToast } from '@/store/ToastContext'
 import { adminService } from '@/services/admin'
+import { useSettings } from '@/store/SettingsContext'
 
 export function AdminProducts() {
   const { addToast } = useToast()
+  const { formatPrice } = useSettings()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [isModalOpen, setIsModalOpen] = useState(false)

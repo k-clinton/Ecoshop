@@ -1,32 +1,58 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Save } from 'lucide-react'
 import { useToast } from '@/store/ToastContext'
+import { useSettings } from '@/store/SettingsContext'
 
 export function AdminSettings() {
     const { addToast } = useToast()
-    const [settings, setSettings] = useState({
-        siteName: 'EcoShop',
-        supportEmail: 'support@ecoshop.com',
+    const { settings, updateSettings } = useSettings()
+
+    // Local state for form
+    const [formData, setFormData] = useState({
+        site_name: '',
+        support_email: '',
         currency: 'USD',
-        shippingFee: 5.99,
-        freeShippingThreshold: 50.00,
-        maintenanceMode: false
+        shipping_fee: 0,
+        free_shipping_threshold: 0,
+        maintenance_mode: false
     })
 
+    // Load settings into local state when they are available
+    useEffect(() => {
+        if (settings) {
+            setFormData({
+                site_name: settings.site_name,
+                support_email: settings.support_email,
+                currency: settings.currency,
+                shipping_fee: settings.shipping_fee,
+                free_shipping_threshold: settings.free_shipping_threshold,
+                maintenance_mode: settings.maintenance_mode
+            })
+        }
+    }, [settings])
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const value = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value
-        setSettings({
-            ...settings,
-            [e.target.name]: value
-        })
+        const target = e.target as HTMLInputElement;
+        const value = target.type === 'checkbox' ? target.checked : target.value;
+        const name = target.name;
+
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }))
     }
 
-    const handleSave = () => {
-        // Mock API call
-        setTimeout(() => {
+    const handleSave = async () => {
+        try {
+            await updateSettings(formData);
             addToast('Settings saved successfully', 'success')
-        }, 500)
+        } catch (error) {
+            console.error('Failed to save settings:', error)
+            addToast('Failed to save settings', 'error')
+        }
     }
+
+    if (!settings) return <div>Loading settings...</div>
 
     return (
         <div className="space-y-6 max-w-4xl">
@@ -44,9 +70,9 @@ export function AdminSettings() {
                             <label className="block text-sm font-medium mb-2">Store Name</label>
                             <input
                                 type="text"
-                                name="siteName"
+                                name="site_name"
                                 className="input"
-                                value={settings.siteName}
+                                value={formData.site_name}
                                 onChange={handleChange}
                             />
                         </div>
@@ -54,9 +80,9 @@ export function AdminSettings() {
                             <label className="block text-sm font-medium mb-2">Support Email</label>
                             <input
                                 type="email"
-                                name="supportEmail"
+                                name="support_email"
                                 className="input"
-                                value={settings.supportEmail}
+                                value={formData.support_email}
                                 onChange={handleChange}
                             />
                         </div>
@@ -65,7 +91,7 @@ export function AdminSettings() {
                             <select
                                 name="currency"
                                 className="input"
-                                value={settings.currency}
+                                value={formData.currency}
                                 onChange={handleChange}
                             >
                                 <option value="USD">USD ($)</option>
@@ -84,10 +110,10 @@ export function AdminSettings() {
                             <label className="block text-sm font-medium mb-2">Standard Shipping Fee</label>
                             <input
                                 type="number"
-                                name="shippingFee"
+                                name="shipping_fee"
                                 step="0.01"
                                 className="input"
-                                value={settings.shippingFee}
+                                value={formData.shipping_fee}
                                 onChange={handleChange}
                             />
                         </div>
@@ -95,10 +121,10 @@ export function AdminSettings() {
                             <label className="block text-sm font-medium mb-2">Free Shipping Threshold</label>
                             <input
                                 type="number"
-                                name="freeShippingThreshold"
+                                name="free_shipping_threshold"
                                 step="0.01"
                                 className="input"
-                                value={settings.freeShippingThreshold}
+                                value={formData.free_shipping_threshold}
                                 onChange={handleChange}
                             />
                         </div>
@@ -111,13 +137,13 @@ export function AdminSettings() {
                     <div className="flex items-center gap-3">
                         <input
                             type="checkbox"
-                            name="maintenanceMode"
-                            id="maintenanceMode"
+                            name="maintenance_mode"
+                            id="maintenance_mode"
                             className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                            checked={settings.maintenanceMode}
+                            checked={formData.maintenance_mode}
                             onChange={handleChange}
                         />
-                        <label htmlFor="maintenanceMode" className="text-sm font-medium">Enable Maintenance Mode</label>
+                        <label htmlFor="maintenance_mode" className="text-sm font-medium">Enable Maintenance Mode</label>
                     </div>
                     <p className="text-sm text-muted-foreground mt-2 ml-7">
                         When enabled, only administrators can access the storefront.

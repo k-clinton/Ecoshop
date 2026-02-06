@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { CartProvider } from '@/store/CartContext'
 import { ToastProvider } from '@/store/ToastContext'
 import { AuthProvider } from '@/store/AuthContext'
+import { SettingsProvider } from '@/store/SettingsContext'
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
 import { CartDrawer } from '@/components/CartDrawer'
@@ -40,34 +41,36 @@ function App() {
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
-        <ToastProvider>
+        <SettingsProvider>
           <CartProvider>
-            <Routes>
-              {/* Store Routes */}
-              <Route path="/" element={<StoreLayout><HomePage /></StoreLayout>} />
-              <Route path="/products" element={<StoreLayout><ProductsPage /></StoreLayout>} />
-              <Route path="/products/:slug" element={<StoreLayout><ProductDetailPage /></StoreLayout>} />
-              <Route path="/checkout" element={<StoreLayout><CheckoutPage /></StoreLayout>} />
-              <Route path="/signin" element={<StoreLayout><SignInPage /></StoreLayout>} />
-              <Route path="/signup" element={<StoreLayout><SignUpPage /></StoreLayout>} />
-              <Route path="/verify-email" element={<StoreLayout><VerifyEmailPage /></StoreLayout>} />
-              <Route path="/account" element={<StoreLayout><AccountPage /></StoreLayout>} />
-              <Route path="/orders/:id" element={<StoreLayout><OrderDetailPage /></StoreLayout>} />
+            <ToastProvider>
+              <Routes>
+                {/* Store Routes */}
+                <Route path="/" element={<StoreLayout><HomePage /></StoreLayout>} />
+                <Route path="/products" element={<StoreLayout><ProductsPage /></StoreLayout>} />
+                <Route path="/products/:slug" element={<StoreLayout><ProductDetailPage /></StoreLayout>} />
+                <Route path="/checkout" element={<StoreLayout><CheckoutPage /></StoreLayout>} />
+                <Route path="/signin" element={<StoreLayout><SignInPage /></StoreLayout>} />
+                <Route path="/signup" element={<StoreLayout><SignUpPage /></StoreLayout>} />
+                <Route path="/verify-email" element={<StoreLayout><VerifyEmailPage /></StoreLayout>} />
+                <Route path="/account" element={<StoreLayout><AccountPage /></StoreLayout>} />
+                <Route path="/orders/:id" element={<StoreLayout><OrderDetailPage /></StoreLayout>} />
 
-              {/* Admin Routes */}
-              <Route path="/admin" element={<AdminLayout />}>
-                <Route index element={<AdminDashboard />} />
-                <Route path="products" element={<AdminProducts />} />
-                <Route path="orders" element={<AdminOrders />} />
-                <Route path="inventory" element={<AdminInventory />} />
-                <Route path="customers" element={<AdminCustomers />} />
-                <Route path="settings" element={<AdminSettings />} />
-              </Route>
-            </Routes>
-            <ToastContainer />
-            <SessionExpiredNotice />
+                {/* Admin Routes */}
+                <Route path="/admin" element={<AdminLayout />}>
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="products" element={<AdminProducts />} />
+                  <Route path="orders" element={<AdminOrders />} />
+                  <Route path="inventory" element={<AdminInventory />} />
+                  <Route path="customers" element={<AdminCustomers />} />
+                  <Route path="settings" element={<AdminSettings />} />
+                </Route>
+              </Routes>
+              <ToastContainer />
+              <SessionExpiredNotice />
+            </ToastProvider>
           </CartProvider>
-        </ToastProvider>
+        </SettingsProvider>
       </AuthProvider>
     </BrowserRouter>
   )

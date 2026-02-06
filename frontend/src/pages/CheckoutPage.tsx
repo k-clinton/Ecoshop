@@ -1,18 +1,23 @@
-import React, { useState } from 'react'
+
+import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ChevronRight, CreditCard, Truck, Lock, CheckCircle } from 'lucide-react'
+import { Shield, CreditCard, Truck, MapPin, ChevronRight, Lock, CheckCircle } from 'lucide-react'
 import { useCart } from '@/store/CartContext'
 import { useAuth } from '@/store/AuthContext'
 import { useToast } from '@/store/ToastContext'
+import { useSettings } from '@/store/SettingsContext'
+import { cn } from '@/lib/utils'
+import apiCall from '@/services/api'
 import { orderService } from '@/services/orders'
-import { formatPrice, cn } from '@/lib/utils'
 
 type CheckoutStep = 'information' | 'shipping' | 'payment' | 'confirmation'
 
 export function CheckoutPage() {
-  const { items, subtotal, clearCart, getCartItemDetails } = useCart()
-  const { addToast } = useToast()
   const navigate = useNavigate()
+  const { items, subtotal, clearCart, getCartItemDetails } = useCart()
+  const { user } = useAuth()
+  const { addToast } = useToast()
+  const { formatPrice, settings } = useSettings()
   const [step, setStep] = useState<CheckoutStep>('information')
   const [isProcessing, setIsProcessing] = useState(false)
 
@@ -41,7 +46,7 @@ export function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (step === 'information') {
       setStep('shipping')
     } else if (step === 'shipping') {
@@ -57,7 +62,7 @@ export function CheckoutPage() {
           tax,
           total,
           shippingAddress: {
-            name: `${formData.firstName} ${formData.lastName}`,
+            name: `${formData.firstName} ${formData.lastName} `,
             street: formData.address,
             city: formData.city,
             state: formData.state,
@@ -65,7 +70,7 @@ export function CheckoutPage() {
             country: formData.country
           }
         })
-        
+
         setStep('confirmation')
         clearCart()
         addToast('Order placed successfully!', 'success')
@@ -147,15 +152,15 @@ export function CheckoutPage() {
                     <div
                       className={cn(
                         'flex items-center gap-2',
-                        step === s ? 'text-primary' : 
-                        (['information', 'shipping', 'payment'].indexOf(step) > i) ? 'text-success' : 'text-muted-foreground'
+                        step === s ? 'text-primary' :
+                          (['information', 'shipping', 'payment'].indexOf(step) > i) ? 'text-success' : 'text-muted-foreground'
                       )}
                     >
                       <div
                         className={cn(
                           'h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium',
                           step === s ? 'bg-primary text-primary-foreground' :
-                          (['information', 'shipping', 'payment'].indexOf(step) > i) ? 'bg-success text-success-foreground' : 'bg-muted'
+                            (['information', 'shipping', 'payment'].indexOf(step) > i) ? 'bg-success text-success-foreground' : 'bg-muted'
                         )}
                       >
                         {(['information', 'shipping', 'payment'].indexOf(step) > i) ? '✓' : i + 1}
@@ -376,7 +381,7 @@ export function CheckoutPage() {
                         Back
                       </button>
                       <button type="submit" disabled={isProcessing} className="btn-primary btn-lg flex-1">
-                        {isProcessing ? 'Processing...' : `Pay ${formatPrice(total)}`}
+                        {isProcessing ? 'Processing...' : `Pay ${formatPrice(total)} `}
                       </button>
                     </div>
                   </div>
@@ -388,7 +393,7 @@ export function CheckoutPage() {
             <div className="lg:sticky lg:top-24 h-fit">
               <div className="card p-6">
                 <h3 className="font-semibold text-lg mb-4">Order Summary</h3>
-                
+
                 <ul className="space-y-4 mb-6">
                   {items.map((item) => {
                     const details = getCartItemDetails(item)

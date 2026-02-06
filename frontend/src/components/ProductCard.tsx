@@ -1,15 +1,35 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { Star } from 'lucide-react'
-import { Product } from '@/data/types'
-import { formatPrice, cn } from '@/lib/utils'
+import { ShoppingCart, Star } from 'lucide-react'
+import { useCart } from '@/store/CartContext'
+import { useToast } from '@/store/ToastContext'
+import { useSettings } from '@/store/SettingsContext'
+import { cn } from '@/lib/utils'
 
 interface ProductCardProps {
-  product: Product
+  product: {
+    id: string
+    name: string
+    slug: string
+    description: string
+    price: number
+    compareAtPrice?: number
+    image: string
+    category: string
+    rating: number
+    reviewCount: number
+    stock: number
+    images: string[]
+    variants: any[]
+  }
   className?: string
 }
 
 export function ProductCard({ product, className }: ProductCardProps) {
+  const { addItem } = useCart()
+  const { addToast } = useToast()
+  const { formatPrice } = useSettings()
+
   const hasDiscount = product.compareAtPrice && product.compareAtPrice > product.price
   const discountPercent = hasDiscount
     ? Math.round((1 - product.price / product.compareAtPrice!) * 100)

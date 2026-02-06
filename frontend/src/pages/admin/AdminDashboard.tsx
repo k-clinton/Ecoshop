@@ -1,19 +1,45 @@
-
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  DollarSign,
-  ShoppingCart,
-  Package,
+  ShoppingBag,
   Users,
+  DollarSign,
+  Package,
+  ArrowUpRight,
+  ArrowDownRight,
+  Clock,
+  AlertTriangle,
+  ShoppingCart,
   ArrowRight,
   AlertCircle
 } from 'lucide-react'
-import { formatPrice, cn } from '@/lib/utils'
-import { adminService, DashboardStats } from '@/services/admin'
+import { cn } from '@/lib/utils'
+import apiCall from '@/services/api'
 import { useToast } from '@/store/ToastContext'
+import { useSettings } from '@/store/SettingsContext'
+import { adminService } from '@/services/admin'
+
+interface DashboardStats {
+  totalRevenue: number
+  totalOrders: number
+  totalCustomers: number
+  totalProducts: number
+  recentOrders: {
+    id: string
+    total: number
+    status: string
+    createdAt: string
+  }[]
+  lowStockProducts: {
+    id: string
+    name: string
+    slug: string
+    stock: number
+  }[]
+}
 
 export function AdminDashboard() {
+  const { formatPrice } = useSettings()
   const { addToast } = useToast()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -168,7 +194,7 @@ export function AdminDashboard() {
                 <div key={product.id} className="flex items-center gap-4 p-4">
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm truncate">{product.name}</p>
-                    <Link to={`/products/${product.slug}`} className="text-xs text-primary hover:underline">View Product</Link>
+                    <Link to={`/ products / ${product.slug} `} className="text-xs text-primary hover:underline">View Product</Link>
                   </div>
                   <div className="text-right">
                     <p className={cn(

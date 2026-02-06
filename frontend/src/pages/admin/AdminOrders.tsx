@@ -1,66 +1,68 @@
-import React, { useState } from 'react'
-import { Search, Eye, ChevronDown, Package, Truck, CheckCircle, XCircle, Clock, X } from 'lucide-react'
-import { formatPrice, cn } from '@/lib/utils'
+import React, { useState, useEffect } from 'react'
+import { Search, Eye, Filter, CheckCircle, Truck, XCircle, Clock, ChevronDown, Package, X } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import apiCall from '@/services/api'
 import { useToast } from '@/store/ToastContext'
+import { useSettings } from '@/store/SettingsContext'
 
 const initialOrders = [
-  { 
-    id: 'ORD-006', 
-    customer: 'Emily Chen', 
+  {
+    id: 'ORD-006',
+    customer: 'Emily Chen',
     email: 'emily@example.com',
-    items: 3, 
-    total: 156.99, 
-    status: 'pending' as const, 
+    items: 3,
+    total: 156.99,
+    status: 'pending' as const,
     date: '2024-02-01',
     address: '123 Oak Street, Portland, OR 97201'
   },
-  { 
-    id: 'ORD-005', 
-    customer: 'Michael Brown', 
+  {
+    id: 'ORD-005',
+    customer: 'Michael Brown',
     email: 'michael@example.com',
-    items: 1, 
-    total: 89.00, 
-    status: 'processing' as const, 
+    items: 1,
+    total: 89.00,
+    status: 'processing' as const,
     date: '2024-01-31',
     address: '456 Pine Ave, Seattle, WA 98101'
   },
-  { 
-    id: 'ORD-004', 
-    customer: 'Sarah Johnson', 
+  {
+    id: 'ORD-004',
+    customer: 'Sarah Johnson',
     email: 'sarah@example.com',
-    items: 2, 
-    total: 234.50, 
-    status: 'shipped' as const, 
+    items: 2,
+    total: 234.50,
+    status: 'shipped' as const,
     date: '2024-01-30',
     address: '789 Maple Dr, San Francisco, CA 94102'
   },
-  { 
-    id: 'ORD-003', 
-    customer: 'David Lee', 
+  {
+    id: 'ORD-003',
+    customer: 'David Lee',
     email: 'david@example.com',
-    items: 4, 
-    total: 312.00, 
-    status: 'delivered' as const, 
+    items: 4,
+    total: 312.00,
+    status: 'delivered' as const,
     date: '2024-01-28',
     address: '321 Cedar Ln, Los Angeles, CA 90001'
   },
-  { 
-    id: 'ORD-002', 
-    customer: 'Lisa Wang', 
+  {
+    id: 'ORD-002',
+    customer: 'Lisa Wang',
     email: 'lisa@example.com',
-    items: 1, 
-    total: 45.00, 
-    status: 'cancelled' as const, 
+    items: 1,
+    total: 45.00,
+    status: 'cancelled' as const,
     date: '2024-01-27',
     address: '654 Birch Rd, Denver, CO 80201'
   },
-  { 
-    id: 'ORD-001', 
-    customer: 'James Wilson', 
+  {
+    id: 'ORD-001',
+    customer: 'James Wilson',
     email: 'james@example.com',
-    items: 2, 
-    total: 178.99, 
-    status: 'delivered' as const, 
+    items: 2,
+    total: 178.99,
+    status: 'delivered' as const,
     date: '2024-01-25',
     address: '987 Elm St, Austin, TX 78701'
   },
@@ -91,17 +93,17 @@ export function AdminOrders() {
 
   const handleStatusChange = async (orderId: string, newStatus: typeof initialOrders[0]['status']) => {
     setIsUpdating(true)
-    
+
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 500))
-    
-    setOrders(orders.map(order => 
+
+    setOrders(orders.map(order =>
       order.id === orderId ? { ...order, status: newStatus } : order
     ))
-    
+
     addToast(`Order ${orderId} status updated to ${newStatus}`, 'success')
     setIsUpdating(false)
-    
+
     if (selectedOrder && selectedOrder.id === orderId) {
       setSelectedOrder({ ...selectedOrder, status: newStatus })
     }
@@ -119,7 +121,7 @@ export function AdminOrders() {
         {statusOptions.map((status) => {
           const count = orders.filter(o => o.status === status.value).length
           return (
-            <button 
+            <button
               key={status.value}
               onClick={() => setStatusFilter(statusFilter === status.value ? '' : status.value)}
               className={cn(
@@ -211,7 +213,7 @@ export function AdminOrders() {
                     </td>
                     <td className="p-4">
                       <div className="flex items-center justify-end gap-2">
-                        <button 
+                        <button
                           onClick={() => setSelectedOrder(order)}
                           className="btn-ghost btn-sm"
                         >
@@ -248,7 +250,7 @@ export function AdminOrders() {
           <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-lg bg-background rounded-2xl shadow-2xl">
             <div className="p-6 border-b flex items-center justify-between">
               <h2 className="text-xl font-semibold">Order {selectedOrder.id}</h2>
-              <button 
+              <button
                 onClick={() => setSelectedOrder(null)}
                 className="btn-ghost p-2"
               >
@@ -298,7 +300,7 @@ export function AdminOrders() {
               <button onClick={() => setSelectedOrder(null)} className="btn-outline btn-md">
                 Close
               </button>
-              <button 
+              <button
                 onClick={() => handleStatusChange(selectedOrder.id, selectedOrder.status === 'shipped' ? 'delivered' : 'shipped')}
                 className="btn-primary btn-md"
                 disabled={isUpdating}

@@ -134,11 +134,28 @@ CREATE TABLE IF NOT EXISTS order_items (
   FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE CASCADE,
   INDEX idx_order_id (order_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- Settings table
+CREATE TABLE IF NOT EXISTS settings (
+  id VARCHAR(50) PRIMARY KEY DEFAULT 'default',
+  site_name VARCHAR(255) DEFAULT 'EcoShop',
+  support_email VARCHAR(255) DEFAULT 'support@ecoshop.com',
+  currency VARCHAR(10) DEFAULT 'USD',
+  shipping_fee DECIMAL(10, 2) DEFAULT 5.99,
+  free_shipping_threshold DECIMAL(10, 2) DEFAULT 50.00,
+  maintenance_mode BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Insert default settings if not exists
+INSERT IGNORE INTO settings (id) VALUES ('default');
 `;
 
 async function setupDatabase() {
   let connection;
-  
+
   try {
     // Connect without database first to create it
     connection = await mysql.createConnection({
@@ -150,13 +167,13 @@ async function setupDatabase() {
     });
 
     console.log('Connected to MySQL server');
-    
+
     // Execute schema
     await connection.query(schema);
-    
+
     console.log('Database schema created successfully!');
     console.log(`Database: ${process.env.DB_NAME || 'ecoshop_db'}`);
-    
+
   } catch (error) {
     console.error('Error setting up database:', error);
     process.exit(1);

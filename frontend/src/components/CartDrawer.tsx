@@ -1,20 +1,23 @@
+
 import React, { useEffect } from 'react'
 import { X, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useCart } from '@/store/CartContext'
-import { formatPrice, cn } from '@/lib/utils'
+import { useSettings } from '@/store/SettingsContext'
+import { cn } from '@/lib/utils'
 
 export function CartDrawer() {
-  const { 
-    items, 
-    subtotal, 
-    itemCount, 
-    isOpen, 
-    closeCart, 
-    removeItem, 
+  const {
+    items,
+    subtotal,
+    itemCount,
+    isOpen,
+    closeCart,
+    removeItem,
     updateQuantity,
-    getCartItemDetails 
+    getCartItemDetails
   } = useCart()
+  const { formatPrice } = useSettings()
 
   // Close cart on escape key
   useEffect(() => {
@@ -93,7 +96,7 @@ export function CartDrawer() {
                   return (
                     <li key={item.variantId} className="flex gap-4 pb-4 border-b last:border-0">
                       <Link
-                        to={`/products/${product.slug}`}
+                        to={`/ products / ${product.slug} `}
                         onClick={closeCart}
                         className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-muted"
                       >
@@ -106,7 +109,7 @@ export function CartDrawer() {
 
                       <div className="flex-1 min-w-0">
                         <Link
-                          to={`/products/${product.slug}`}
+                          to={`/ products / ${product.slug} `}
                           onClick={closeCart}
                           className="font-medium text-foreground hover:text-primary transition-colors line-clamp-1"
                         >

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { User, Package, MapPin, CreditCard, Bell, Shield, LogOut, Mail, Edit2, Trash2, Plus } from 'lucide-react'
 import { useAuth } from '@/store/AuthContext'
@@ -197,11 +197,10 @@ export function AccountPage() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                      activeTab === tab.id
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                    }`}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.id
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      }`}
                   >
                     <Icon className="h-4 w-4" />
                     {tab.label}
@@ -209,7 +208,7 @@ export function AccountPage() {
                 )
               })}
               <button
-                onClick={() => {}}
+                onClick={() => { }}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors mt-2"
               >
                 <LogOut className="h-4 w-4" />
@@ -318,7 +317,8 @@ export function AccountPage() {
                             <span
                               className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
                                 order.status
-                              )}`}
+                              )
+                                }`}
                             >
                               {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                             </span>
@@ -383,9 +383,8 @@ export function AccountPage() {
                       {addresses.map((address) => (
                         <div
                           key={address.id}
-                          className={`border rounded-lg p-4 relative ${
-                            address.isDefault ? 'border-primary bg-primary/5' : ''
-                          }`}
+                          className={`border rounded-lg p-4 relative ${address.isDefault ? 'border-primary bg-primary/5' : ''
+                            }`}
                         >
                           {address.isDefault && (
                             <span className="absolute top-3 right-3 px-2 py-1 bg-primary text-primary-foreground text-xs font-medium rounded">
