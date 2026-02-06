@@ -52,7 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
 
             // Prevent admin from changing their own role
-            const currentUser = getUserFromToken(req);
+            const currentUser = getAuthUser(req);
             if (currentUser?.userId === id) {
                 return sendError(res, 'You cannot change your own role', 403);
             }
@@ -86,7 +86,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // DELETE - Delete customer
         if (req.method === 'DELETE') {
             // Prevent admin from deleting themselves
-            const currentUser = getUserFromToken(req);
+            const currentUser = getAuthUser(req);
             if (currentUser?.userId === id) {
                 return sendError(res, 'You cannot delete your own account', 403);
             }
