@@ -1,66 +1,89 @@
-import React from 'react'
+
+import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { 
-  DollarSign, 
-  ShoppingCart, 
-  Package, 
+import {
+  DollarSign,
+  ShoppingCart,
+  Package,
   Users,
   TrendingUp,
   TrendingDown,
   ArrowRight,
   AlertCircle
 } from 'lucide-react'
-import { products, mockOrders } from '@/data/mockData'
 import { formatPrice, cn } from '@/lib/utils'
-
-const stats = [
-  {
-    label: 'Total Revenue',
-    value: '$12,543.00',
-    change: '+12.5%',
-    trend: 'up',
-    icon: DollarSign,
-    color: 'bg-success/10 text-success',
-  },
-  {
-    label: 'Orders',
-    value: '156',
-    change: '+8.2%',
-    trend: 'up',
-    icon: ShoppingCart,
-    color: 'bg-primary/10 text-primary',
-  },
-  {
-    label: 'Products',
-    value: products.length.toString(),
-    change: '+2',
-    trend: 'up',
-    icon: Package,
-    color: 'bg-accent/10 text-accent',
-  },
-  {
-    label: 'Customers',
-    value: '1,429',
-    change: '-2.1%',
-    trend: 'down',
-    icon: Users,
-    color: 'bg-secondary text-secondary-foreground',
-  },
-]
-
-const recentOrders = [
-  { id: 'ORD-003', customer: 'John Smith', total: 89.99, status: 'pending', date: '2 min ago' },
-  { id: 'ORD-002', customer: 'Jane Doe', total: 156.00, status: 'shipped', date: '1 hour ago' },
-  { id: 'ORD-001', customer: 'Mike Johnson', total: 234.50, status: 'delivered', date: '3 hours ago' },
-  { id: 'ORD-000', customer: 'Sarah Williams', total: 67.00, status: 'processing', date: '5 hours ago' },
-]
-
-const lowStockProducts = products
-  .filter(p => p.stock < 30)
-  .sort((a, b) => a.stock - b.stock)
-  .slice(0, 5)
+import { adminService, DashboardStats } from '@/services/admin'
+import { useToast } from '@/store/ToastContext'
 
 export function AdminDashboard() {
+  const { addToast } = useToast()
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadStats()
+  }, [])
+
+  const loadStats = async () => {
+    try {
+      setLoading(true)
+      const data = await adminService.getStats()
+      setStats(data)
+    } catch (error) {
+      console.error('Failed to load dashboard stats:', error)
+      addToast('Failed to load dashboard statistics', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const statCards = [
+    {
+      label: 'Total Revenue',
+      value: stats ? formatPrice(stats.totalRevenue) : '$0.00',
+      change: 'See orders',
+      trend: 'up',
+      icon: DollarSign,
+      color: 'bg-success/10 text-success',
+      link: '/admin/orders'
+    },
+    {
+      label: 'Orders',
+      value: stats?.totalOrders.toString() || '0',
+      change: 'View all',
+      trend: 'up',
+      icon: ShoppingCart,
+      color: 'bg-primary/10 text-primary',
+      link: '/admin/orders'
+    },
+    {
+      label: 'Products',
+      value: stats?.totalProducts.toString() || '0',
+      change: 'Manage',
+      trend: 'up',
+      icon: Package,
+      color: 'bg-accent/10 text-accent',
+      link: '/admin/products'
+    },
+    {
+      label: 'Customers',
+      value: stats?.totalCustomers.toString() || '0',
+      change: 'View list',
+      trend: 'up',
+      icon: Users,
+      color: 'bg-secondary text-secondary-foreground',
+      link: '/admin/customers'
+    },
+  ]
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-8">
       <div>
@@ -70,23 +93,21 @@ export function AdminDashboard() {
 
       {/* Stats Grid */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => (
-          <div key={stat.label} className="card p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className={cn('h-10 w-10 rounded-lg flex items-center justify-center', stat.color)}>
-                <stat.icon className="h-5 w-5" />
+        {statCards.map((stat) => (
+          <Link key={stat.label} to={stat.link} className="block transition-transform hover:-translate-y-1">
+            <div className="card p-6 h-full">
+              <div className="flex items-center justify-between mb-4">
+                <div className={cn('h-10 w-10 rounded-lg flex items-center justify-center', stat.color)}>
+                  <stat.icon className="h-5 w-5" />
+                </div>
               </div>
-              <span className={cn(
-                'flex items-center gap-1 text-sm font-medium',
-                stat.trend === 'up' ? 'text-success' : 'text-destructive'
-              )}>
-                {stat.trend === 'up' ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-                {stat.change}
-              </span>
+              <p className="text-2xl font-semibold text-foreground">{stat.value}</p>
+              <p className="text-sm text-muted-foreground mb-2">{stat.label}</p>
+              <div className="text-xs text-primary flex items-center gap-1">
+                {stat.change} <ArrowRight className="h-3 w-3" />
+              </div>
             </div>
-            <p className="text-2xl font-semibold text-foreground">{stat.value}</p>
-            <p className="text-sm text-muted-foreground">{stat.label}</p>
-          </div>
+          </Link>
         ))}
       </div>
 
@@ -99,27 +120,36 @@ export function AdminDashboard() {
               View all <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          <div className="divide-y">
-            {recentOrders.map((order) => (
-              <div key={order.id} className="flex items-center justify-between p-4">
-                <div>
-                  <p className="font-medium text-sm">{order.id}</p>
-                  <p className="text-sm text-muted-foreground">{order.customer}</p>
+          <div className="divide-y max-h-[400px] overflow-y-auto">
+            {stats?.recentOrders && stats.recentOrders.length > 0 ? (
+              stats.recentOrders.map((order) => (
+                <div key={order.id} className="flex items-center justify-between p-4">
+                  <div>
+                    <p className="font-medium text-sm">Order #{order.id}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(order.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium text-sm">{formatPrice(order.total)}</p>
+                    <span className={cn(
+                      'inline-block text-xs px-2 py-0.5 rounded-full capitalize',
+                      order.status === 'delivered' && 'bg-success/10 text-success',
+                      order.status === 'shipped' && 'bg-primary/10 text-primary',
+                      order.status === 'processing' && 'bg-accent/10 text-accent',
+                      order.status === 'pending' && 'bg-muted text-muted-foreground',
+                      order.status === 'cancelled' && 'bg-destructive/10 text-destructive',
+                    )}>
+                      {order.status}
+                    </span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-medium text-sm">{formatPrice(order.total)}</p>
-                  <span className={cn(
-                    'inline-block text-xs px-2 py-0.5 rounded-full',
-                    order.status === 'delivered' && 'bg-success/10 text-success',
-                    order.status === 'shipped' && 'bg-primary/10 text-primary',
-                    order.status === 'processing' && 'bg-accent/10 text-accent',
-                    order.status === 'pending' && 'bg-muted text-muted-foreground',
-                  )}>
-                    {order.status}
-                  </span>
-                </div>
+              ))
+            ) : (
+              <div className="p-8 text-center text-muted-foreground">
+                No orders yet.
               </div>
-            ))}
+            )}
           </div>
         </div>
 
@@ -134,26 +164,29 @@ export function AdminDashboard() {
               Manage <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          <div className="divide-y">
-            {lowStockProducts.map((product) => (
-              <div key={product.id} className="flex items-center gap-4 p-4">
-                <div className="h-12 w-12 rounded-lg bg-muted overflow-hidden flex-shrink-0">
-                  <img src={product.images[0]} alt={product.name} className="h-full w-full object-cover" />
+          <div className="divide-y max-h-[400px] overflow-y-auto">
+            {stats?.lowStockProducts && stats.lowStockProducts.length > 0 ? (
+              stats.lowStockProducts.map((product) => (
+                <div key={product.id} className="flex items-center gap-4 p-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{product.name}</p>
+                    <Link to={`/products/${product.slug}`} className="text-xs text-primary hover:underline">View Product</Link>
+                  </div>
+                  <div className="text-right">
+                    <p className={cn(
+                      'font-semibold text-sm',
+                      product.stock < 5 ? 'text-destructive' : 'text-accent'
+                    )}>
+                      {product.stock} units
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{product.name}</p>
-                  <p className="text-sm text-muted-foreground">{product.variants.length} variants</p>
-                </div>
-                <div className="text-right">
-                  <p className={cn(
-                    'font-semibold text-sm',
-                    product.stock < 20 ? 'text-destructive' : 'text-accent'
-                  )}>
-                    {product.stock} units
-                  </p>
-                </div>
+              ))
+            ) : (
+              <div className="p-8 text-center text-muted-foreground">
+                No low stock alerts. Good job!
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>
