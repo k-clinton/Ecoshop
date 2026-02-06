@@ -1,33 +1,15 @@
-import React from 'react'
 import { Link } from 'react-router-dom'
-import { ShoppingCart, Star } from 'lucide-react'
-import { useCart } from '@/store/CartContext'
-import { useToast } from '@/store/ToastContext'
+import { Star } from 'lucide-react'
 import { useSettings } from '@/store/SettingsContext'
 import { cn } from '@/lib/utils'
+import { Product } from '@/data/types'
 
 interface ProductCardProps {
-  product: {
-    id: string
-    name: string
-    slug: string
-    description: string
-    price: number
-    compareAtPrice?: number
-    image: string
-    category: string
-    rating: number
-    reviewCount: number
-    stock: number
-    images: string[]
-    variants: any[]
-  }
+  product: Product
   className?: string
 }
 
 export function ProductCard({ product, className }: ProductCardProps) {
-  const { addItem } = useCart()
-  const { addToast } = useToast()
   const { formatPrice } = useSettings()
 
   const hasDiscount = product.compareAtPrice && product.compareAtPrice > product.price

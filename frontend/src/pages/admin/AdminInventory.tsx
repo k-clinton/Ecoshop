@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Search, AlertTriangle, Plus, Minus, Save } from 'lucide-react'
 import { categories } from '@/data/mockData'
 import { cn } from '@/lib/utils'
@@ -33,7 +33,7 @@ export function AdminInventory() {
 
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStock = !stockFilter || 
+    const matchesStock = !stockFilter ||
       (stockFilter === 'low' && p.stock < 30) ||
       (stockFilter === 'out' && p.stock === 0) ||
       (stockFilter === 'healthy' && p.stock >= 30)
@@ -52,18 +52,18 @@ export function AdminInventory() {
     if (adjustment) {
       try {
         const result = await adminService.adjustStock(productId, adjustment)
-        
+
         // Update local state with new stock value
-        setProducts(prevProducts => 
-          prevProducts.map(p => 
-            p.id === productId 
+        setProducts(prevProducts =>
+          prevProducts.map(p =>
+            p.id === productId
               ? { ...p, stock: result.newStock }
               : p
           )
         )
-        
+
         addToast(`Stock updated: ${adjustment > 0 ? '+' : ''}${adjustment} units`, 'success')
-        
+
         // Clear the adjustment for this product
         setAdjustments(prev => {
           const { [productId]: _, ...rest } = prev
@@ -161,7 +161,7 @@ export function AdminInventory() {
                 const category = categories.find(c => c.id === product.category)
                 const adjustment = adjustments[product.id] || 0
                 const newStock = product.stock + adjustment
-                
+
                 return (
                   <tr key={product.id} className="hover:bg-muted/30">
                     <td className="p-4">
@@ -184,8 +184,8 @@ export function AdminInventory() {
                       <div className="flex items-center gap-2">
                         <span className={cn(
                           'font-semibold',
-                          product.stock === 0 ? 'text-destructive' : 
-                          product.stock < 30 ? 'text-accent' : 'text-foreground'
+                          product.stock === 0 ? 'text-destructive' :
+                            product.stock < 30 ? 'text-accent' : 'text-foreground'
                         )}>
                           {product.stock}
                         </span>
@@ -203,10 +203,10 @@ export function AdminInventory() {
                       <span className={cn(
                         'badge',
                         product.stock === 0 ? 'bg-destructive/10 text-destructive' :
-                        product.stock < 30 ? 'bg-accent/10 text-accent' : 'badge-success'
+                          product.stock < 30 ? 'bg-accent/10 text-accent' : 'badge-success'
                       )}>
-                        {product.stock === 0 ? 'Out of Stock' : 
-                         product.stock < 30 ? 'Low Stock' : 'In Stock'}
+                        {product.stock === 0 ? 'Out of Stock' :
+                          product.stock < 30 ? 'Low Stock' : 'In Stock'}
                       </span>
                     </td>
                     <td className="p-4">

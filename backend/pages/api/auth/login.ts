@@ -33,9 +33,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const user = userArray[0];
 
-    // Check if user registered with OAuth
-    if (user.oauth_provider) {
-      return sendError(res, `Please sign in with ${user.oauth_provider}`, 400);
+    // Check if user has a password set (some OAuth-only users might not have passwords)
+    if (!user.password) {
+      return sendError(res, `Please sign in with ${user.oauth_provider || 'your OAuth provider'}`, 400);
     }
 
     // Verify password

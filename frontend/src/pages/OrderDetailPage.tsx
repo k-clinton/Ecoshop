@@ -1,16 +1,15 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, Package, MapPin, Truck, CheckCircle, Clock, AlertCircle, CreditCard, XCircle } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { ArrowLeft, Package, MapPin, Truck, CheckCircle, Clock, CreditCard } from 'lucide-react'
 import { useAuth } from '@/store/AuthContext'
 import { useToast } from '@/store/ToastContext'
 import { useSettings } from '@/store/SettingsContext'
-import apiCall from '@/services/api'
+import { orderService } from '@/services/orders'
 import type { Order } from '@/data/types'
 
 export function OrderDetailPage() {
-  const { id: orderId } = useParams<{ id: string }>()
+  const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
   const { addToast } = useToast()
@@ -19,7 +18,7 @@ export function OrderDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    if (!user) { // Changed from !isAuthenticated
+    if (!user) {
       navigate('/signin')
       return
     }
@@ -27,7 +26,7 @@ export function OrderDetailPage() {
     if (id) {
       loadOrder(id)
     }
-  }, [id, isAuthenticated, navigate])
+  }, [id, user, navigate])
 
   const loadOrder = async (orderId: string) => {
     setIsLoading(true)

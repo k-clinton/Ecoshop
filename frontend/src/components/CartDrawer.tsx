@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { X, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useCart } from '@/store/CartContext'

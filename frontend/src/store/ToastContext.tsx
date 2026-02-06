@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react'
+import { createContext, useContext, useState, ReactNode } from 'react'
 
 interface Toast {
   id: string
@@ -20,7 +20,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const addToast = (message: string, type: Toast['type'] = 'success') => {
     const id = Math.random().toString(36).substring(2, 9)
     setToasts(prev => [...prev, { id, message, type }])
-    
+
     setTimeout(() => {
       removeToast(id)
     }, 4000)

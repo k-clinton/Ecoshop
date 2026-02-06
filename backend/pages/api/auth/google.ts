@@ -48,16 +48,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (userArray.length > 0) {
       user = userArray[0];
       
-      // If user exists but not with OAuth, return error
+      // If user exists but not with OAuth, link the account
       if (!user.oauth_provider) {
-        return sendError(res, 'An account with this email already exists. Please sign in with email and password.', 400);
+        // Link the Google account to the existing user account
+        await pool.execute(
+          'UPDATE users SET oauth_provider = ?, oauth_id = ?, email_verified = 1, last_activity = CURRENT_TIMESTAMP WHERE id = ?',
+          ['google', googleId, user.id]
+        );
+        
+        // Update the user object with the new info
+        user.oauth_provider = 'google';
+        user.oauth_id = googleId;
+      } else {
+        // Update last activity for existing OAuth user
+        await pool.execute(
+          'UPDATE users SET last_activity = CURRENT_TIMESTAMP WHERE id = ?',
+          [user.id]
+        );
       }
-
-      // Update last activity
-      await pool.execute(
-        'UPDATE users SET last_activity = CURRENT_TIMESTAMP WHERE id = ?',
-        [user.id]
-      );
     } else {
       // Create new user with Google OAuth
       const userId = generateId();

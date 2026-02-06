@@ -1,72 +1,20 @@
 
-import React, { useState, useEffect } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
-import { Star, Minus, Plus, ShoppingBag, ArrowLeft, Truck, Shield, RefreshCw, ChevronRight, Leaf } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { useParams, Link } from 'react-router-dom'
+import { Star, Minus, Plus, Truck, Shield, RefreshCw, ChevronRight, Leaf } from 'lucide-react'
 import { useCart } from '@/store/CartContext'
 import { useToast } from '@/store/ToastContext'
 import { useSettings } from '@/store/SettingsContext'
 import { cn } from '@/lib/utils'
-import apiCall from '@/services/api'
 import { ProductCard } from '@/components/ProductCard'
-
-interface Product {
-  id: string
-  name: string
-  slug: string
-  description: string
-  price: number
-  compareAtPrice?: number | null
-  images: string[]
-  image: string
-  category: string
-  rating: number
-  reviewCount: number
-  stock: number
-  features: string[]
-  tags: string[]
-  featured: boolean
-  createdAt: string
-  variants: Array<{
-    id: string
-    name: string
-    price: number
-    stock: number
-    available?: boolean
-  }>
-}
-
-// Assuming ProductVariant and Category are still needed or defined elsewhere if not in the new Product interface
-// For now, let's keep a minimal ProductVariant definition if it's used in state,
-// but the instruction implies the Product interface above covers product details.
-// If ProductVariant is truly removed, then selectedVariant state type would need adjustment.
-// Based on the instruction, ProductVariant is not explicitly removed from the state type,
-// but the Product interface provided has a 'variants' array.
-// Let's assume ProductVariant is still a distinct type for the selectedVariant state.
-interface ProductVariant {
-  id: string;
-  name: string;
-  price: number;
-  stock: number;
-  available?: boolean; // Added based on usage in the original code
-}
-
-// Category type is removed from imports, but used in state and useEffect.
-// Let's define it here to avoid errors, assuming it's not globally available anymore.
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-}
-
-// Re-adding productService and categoryService as they are used in useEffect
+import { Product, ProductVariant, Category } from '@/data/types'
 import { productService } from '@/services/products'
 import { categoryService } from '@/services/categories'
 
 
 export function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>()
-  const navigate = useNavigate()
-  const { addItem, isOpen: isCartOpen } = useCart()
+  const { addItem } = useCart()
   const { addToast } = useToast()
   const { formatPrice } = useSettings()
 
@@ -156,8 +104,8 @@ export function ProductDetailPage() {
 
 
   const handleAddToCart = () => {
-    if (selectedVariant) {
-      addItem(product, selectedVariant, quantity)
+    if (selectedVariant && product) {
+      addItem(product as any, selectedVariant, quantity)
       addToast(`${product.name} added to cart!`, 'success')
     }
   }
@@ -360,7 +308,6 @@ export function ProductDetailPage() {
             </h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {relatedProducts.map((p) => (
-                // @ts-ignore
                 <ProductCard key={p.id} product={p} />
               ))}
             </div>

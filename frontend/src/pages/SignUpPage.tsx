@@ -226,20 +226,21 @@ export function SignUpPage() {
             </div>
           </div>
 
-          <div className="flex justify-center">
-            <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ''}>
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={handleGoogleError}
-                useOneTap
-                text="signup_with"
-                shape="rectangular"
-                theme="outline"
-                size="large"
-                width="100%"
-              />
-            </GoogleOAuthProvider>
-          </div>
+          {import.meta.env.VITE_GOOGLE_CLIENT_ID && (
+            <div className="flex justify-center">
+              <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  text="signup_with"
+                  shape="rectangular"
+                  theme="outline"
+                  size="large"
+                  width={400}
+                />
+              </GoogleOAuthProvider>
+            </div>
+          )}
 
           <div className="mt-6 text-center text-sm text-muted-foreground">
             Already have an account?{' '}

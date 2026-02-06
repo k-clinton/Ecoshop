@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react'
+import { createContext, useContext, useState, ReactNode, useEffect } from 'react'
 import { User } from '@/data/types'
 import { authService } from '@/services/auth'
 
@@ -57,6 +57,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Listen for session expiration events
     const handleSessionExpired = () => {
       setState({ user: null, isAuthenticated: false, isLoading: false })
+      authService.stopSessionMonitor()
+
+      // Redirect to sign in with session expired flag
+      const currentPath = window.location.pathname
+      if (currentPath !== '/signin' && currentPath !== '/signup') {
+        window.location.href = '/signin?session_expired=1'
+      }
     }
 
     window.addEventListener('auth:session-expired', handleSessionExpired)
@@ -70,8 +77,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
+      // Stop any existing session monitor
+      authService.stopSessionMonitor()
+
+      // Login will set new token
       const { user } = await authService.login(email, password)
       setState({ user, isAuthenticated: true, isLoading: false })
+
+      // Start fresh session monitor
+      authService.startSessionMonitor()
+
       return { success: true }
     } catch (error: any) {
       return { success: false, error: error.message || 'Login failed' }
@@ -92,6 +107,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await authService.verifyEmail(userId, code)
       const { user } = response
       setState({ user, isAuthenticated: true, isLoading: false })
+
+      // Start session monitor after successful verification
+      authService.startSessionMonitor()
+
       return { success: true }
     } catch (error: any) {
       return { success: false, error: error.message || 'Verification failed' }
@@ -109,8 +128,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = async (credential: string): Promise<{ success: boolean; error?: string }> => {
     try {
+      // Stop any existing session monitor
+      authService.stopSessionMonitor()
+
+      // Google sign in will set new token
       const { user } = await authService.googleSignIn(credential)
       setState({ user, isAuthenticated: true, isLoading: false })
+
+      // Start fresh session monitor
+      authService.startSessionMonitor()
+
       return { success: true }
     } catch (error: any) {
       return { success: false, error: error.message || 'Google sign in failed' }

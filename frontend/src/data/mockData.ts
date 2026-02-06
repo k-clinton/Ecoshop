@@ -1,4 +1,4 @@
-import { Product, Category, CartItem, Order } from './types'
+import { Product, Category, Order } from './types'
 
 export const categories: Category[] = [
   { id: 'home', name: 'Home & Living', slug: 'home-living', image: '/images/category-home.jpg', description: 'Sustainable essentials for your home' },
@@ -787,7 +787,7 @@ export const getFeaturedProducts = (): Product[] => {
 
 export const searchProducts = (query: string): Product[] => {
   const lowercaseQuery = query.toLowerCase()
-  return products.filter(p => 
+  return products.filter(p =>
     p.name.toLowerCase().includes(lowercaseQuery) ||
     p.description.toLowerCase().includes(lowercaseQuery) ||
     p.tags.some(tag => tag.toLowerCase().includes(lowercaseQuery))

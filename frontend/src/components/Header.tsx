@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { ShoppingBag, Search, Menu, X, Leaf, User, LogOut, Settings } from 'lucide-react'
 import { useCart } from '@/store/CartContext'
 import { useAuth } from '@/store/AuthContext'
-import { cn } from '@/lib/utils'
 
 interface HeaderProps {
   onMenuOpen?: () => void
@@ -106,9 +105,9 @@ export function Header({ onMenuOpen }: HeaderProps) {
 
                 {isUserMenuOpen && (
                   <>
-                    <div 
-                      className="fixed inset-0 z-40" 
-                      onClick={() => setIsUserMenuOpen(false)} 
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setIsUserMenuOpen(false)}
                     />
                     <div className="absolute right-0 top-full mt-2 w-56 bg-card rounded-xl border shadow-elevated z-50 py-2">
                       <div className="px-4 py-2 border-b mb-2">

@@ -1,23 +1,19 @@
 
-import React, { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { Shield, CreditCard, Truck, MapPin, ChevronRight, Lock, CheckCircle } from 'lucide-react'
+import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Truck, ChevronRight, Lock, CheckCircle } from 'lucide-react'
 import { useCart } from '@/store/CartContext'
-import { useAuth } from '@/store/AuthContext'
 import { useToast } from '@/store/ToastContext'
 import { useSettings } from '@/store/SettingsContext'
 import { cn } from '@/lib/utils'
-import apiCall from '@/services/api'
 import { orderService } from '@/services/orders'
 
 type CheckoutStep = 'information' | 'shipping' | 'payment' | 'confirmation'
 
 export function CheckoutPage() {
-  const navigate = useNavigate()
   const { items, subtotal, clearCart, getCartItemDetails } = useCart()
-  const { user } = useAuth()
   const { addToast } = useToast()
-  const { formatPrice, settings } = useSettings()
+  const { formatPrice } = useSettings()
   const [step, setStep] = useState<CheckoutStep>('information')
   const [isProcessing, setIsProcessing] = useState(false)
 

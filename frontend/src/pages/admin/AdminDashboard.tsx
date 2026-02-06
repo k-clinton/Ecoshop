@@ -1,20 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  ShoppingBag,
   Users,
   DollarSign,
   Package,
-  ArrowUpRight,
-  ArrowDownRight,
-  Clock,
-  AlertTriangle,
   ShoppingCart,
   ArrowRight,
   AlertCircle
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import apiCall from '@/services/api'
 import { useToast } from '@/store/ToastContext'
 import { useSettings } from '@/store/SettingsContext'
 import { adminService } from '@/services/admin'

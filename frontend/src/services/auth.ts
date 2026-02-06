@@ -32,7 +32,7 @@ export const authService = {
     });
 
     localStorage.setItem('authToken', data.token);
-    this.startSessionMonitor();
+    // Session monitor will be started by AuthContext
     return data;
   },
 
@@ -52,7 +52,7 @@ export const authService = {
     });
 
     localStorage.setItem('authToken', data.token);
-    this.startSessionMonitor();
+    // Session monitor will be started by AuthContext
     return data;
   },
 
@@ -64,7 +64,7 @@ export const authService = {
     });
 
     localStorage.setItem('authToken', data.token);
-    this.startSessionMonitor();
+    // Session monitor will be started by AuthContext
     return data;
   },
 
@@ -102,12 +102,16 @@ export const authService = {
 
   // Session monitoring (10 minute timeout)
   sessionTimeoutInterval: null as number | null,
+  activityListeners: [] as Array<{ event: string; handler: () => void }>,
 
   startSessionMonitor() {
+    // Stop any existing monitor first to prevent duplicates
+    this.stopSessionMonitor();
+    
     this.updateActivity();
 
     // Check activity every minute
-    this.sessionTimeoutInterval = setInterval(() => {
+    this.sessionTimeoutInterval = window.setInterval(() => {
       const lastActivity = localStorage.getItem('lastActivity');
       if (lastActivity) {
         const timeSinceActivity = Date.now() - parseInt(lastActivity);
@@ -124,12 +128,17 @@ export const authService = {
             window.dispatchEvent(new CustomEvent('auth:session-expired'));
           });
         }
+      } else {
+        // If no lastActivity exists, set it now (handles page refresh case)
+        this.updateActivity();
       }
     }, 60000); // Check every minute
 
     // Update activity on user interactions
+    const handler = () => this.updateActivity();
     ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(event => {
-      document.addEventListener(event, () => this.updateActivity(), { passive: true });
+      document.addEventListener(event, handler, { passive: true });
+      this.activityListeners.push({ event, handler });
     });
   },
 
@@ -138,6 +147,12 @@ export const authService = {
       clearInterval(this.sessionTimeoutInterval);
       this.sessionTimeoutInterval = null;
     }
+    
+    // Remove all activity listeners
+    this.activityListeners.forEach(({ event, handler }) => {
+      document.removeEventListener(event, handler);
+    });
+    this.activityListeners = [];
   },
 
   updateActivity() {

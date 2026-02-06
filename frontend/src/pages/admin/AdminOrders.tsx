@@ -1,72 +1,10 @@
-import React, { useState, useEffect } from 'react'
-import { Search, Eye, Filter, CheckCircle, Truck, XCircle, Clock, ChevronDown, Package, X } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Search, Eye, CheckCircle, Truck, XCircle, Clock, ChevronDown, Package, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import apiCall from '@/services/api'
+import { adminOrderService, AdminOrder } from '@/services/adminOrders'
 import { useToast } from '@/store/ToastContext'
 import { useSettings } from '@/store/SettingsContext'
 
-const initialOrders = [
-  {
-    id: 'ORD-006',
-    customer: 'Emily Chen',
-    email: 'emily@example.com',
-    items: 3,
-    total: 156.99,
-    status: 'pending' as const,
-    date: '2024-02-01',
-    address: '123 Oak Street, Portland, OR 97201'
-  },
-  {
-    id: 'ORD-005',
-    customer: 'Michael Brown',
-    email: 'michael@example.com',
-    items: 1,
-    total: 89.00,
-    status: 'processing' as const,
-    date: '2024-01-31',
-    address: '456 Pine Ave, Seattle, WA 98101'
-  },
-  {
-    id: 'ORD-004',
-    customer: 'Sarah Johnson',
-    email: 'sarah@example.com',
-    items: 2,
-    total: 234.50,
-    status: 'shipped' as const,
-    date: '2024-01-30',
-    address: '789 Maple Dr, San Francisco, CA 94102'
-  },
-  {
-    id: 'ORD-003',
-    customer: 'David Lee',
-    email: 'david@example.com',
-    items: 4,
-    total: 312.00,
-    status: 'delivered' as const,
-    date: '2024-01-28',
-    address: '321 Cedar Ln, Los Angeles, CA 90001'
-  },
-  {
-    id: 'ORD-002',
-    customer: 'Lisa Wang',
-    email: 'lisa@example.com',
-    items: 1,
-    total: 45.00,
-    status: 'cancelled' as const,
-    date: '2024-01-27',
-    address: '654 Birch Rd, Denver, CO 80201'
-  },
-  {
-    id: 'ORD-001',
-    customer: 'James Wilson',
-    email: 'james@example.com',
-    items: 2,
-    total: 178.99,
-    status: 'delivered' as const,
-    date: '2024-01-25',
-    address: '987 Elm St, Austin, TX 78701'
-  },
-]
 
 const statusOptions = [
   { value: 'pending', label: 'Pending', icon: Clock, color: 'bg-muted text-muted-foreground' },
@@ -78,35 +16,70 @@ const statusOptions = [
 
 export function AdminOrders() {
   const { addToast } = useToast()
+  const { formatPrice } = useSettings()
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('')
-  const [selectedOrder, setSelectedOrder] = useState<typeof initialOrders[0] | null>(null)
-  const [orders, setOrders] = useState(initialOrders)
+  const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null)
+  const [orders, setOrders] = useState<AdminOrder[]>([])
   const [isUpdating, setIsUpdating] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const loadOrders = async () => {
+      try {
+        const data = await adminOrderService.getOrders()
+        setOrders(data)
+      } catch (error) {
+        console.error('Failed to load orders:', error)
+        addToast('Failed to load orders', 'error')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadOrders()
+  }, [])
 
   const filteredOrders = orders.filter(o => {
     const matchesSearch = o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      o.customer.toLowerCase().includes(searchQuery.toLowerCase())
+      o.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      o.customerEmail.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesStatus = !statusFilter || o.status === statusFilter
     return matchesSearch && matchesStatus
   })
 
-  const handleStatusChange = async (orderId: string, newStatus: typeof initialOrders[0]['status']) => {
+  const handleStatusChange = async (orderId: string, newStatus: AdminOrder['status']) => {
     setIsUpdating(true)
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500))
+    try {
+      const updatedOrder = await adminOrderService.updateOrderStatus(orderId, newStatus)
 
-    setOrders(orders.map(order =>
-      order.id === orderId ? { ...order, status: newStatus } : order
-    ))
+      setOrders(orders.map(order =>
+        order.id === orderId ? updatedOrder : order
+      ))
 
-    addToast(`Order ${orderId} status updated to ${newStatus}`, 'success')
-    setIsUpdating(false)
+      addToast(`Order ${orderId} status updated to ${newStatus}`, 'success')
 
-    if (selectedOrder && selectedOrder.id === orderId) {
-      setSelectedOrder({ ...selectedOrder, status: newStatus })
+      if (selectedOrder && selectedOrder.id === orderId) {
+        setSelectedOrder(updatedOrder)
+      }
+    } catch (error) {
+      console.error('Failed to update order status:', error)
+      addToast('Failed to update order status', 'error')
+    } finally {
+      setIsUpdating(false)
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">Orders</h1>
+          <p className="text-muted-foreground">Loading orders...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -189,14 +162,14 @@ export function AdminOrders() {
                       <p className="font-medium text-sm">{order.id}</p>
                     </td>
                     <td className="p-4">
-                      <p className="font-medium text-sm">{order.customer}</p>
-                      <p className="text-xs text-muted-foreground">{order.email}</p>
+                      <p className="font-medium text-sm">{order.customerName}</p>
+                      <p className="text-xs text-muted-foreground">{order.customerEmail}</p>
                     </td>
                     <td className="p-4">
-                      <p className="text-sm">{order.date}</p>
+                      <p className="text-sm">{new Date(order.createdAt).toLocaleDateString()}</p>
                     </td>
                     <td className="p-4">
-                      <p className="text-sm">{order.items} items</p>
+                      <p className="text-sm">{order.itemCount} items</p>
                     </td>
                     <td className="p-4">
                       <p className="font-medium">{formatPrice(order.total)}</p>
@@ -261,15 +234,15 @@ export function AdminOrders() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Customer</p>
-                  <p className="font-medium">{selectedOrder.customer}</p>
+                  <p className="font-medium">{selectedOrder.customerName}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Email</p>
-                  <p className="font-medium">{selectedOrder.email}</p>
+                  <p className="font-medium">{selectedOrder.customerEmail}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Date</p>
-                  <p className="font-medium">{selectedOrder.date}</p>
+                  <p className="font-medium">{new Date(selectedOrder.createdAt).toLocaleDateString()}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
@@ -287,7 +260,11 @@ export function AdminOrders() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Shipping Address</p>
-                <p className="font-medium">{selectedOrder.address}</p>
+                <p className="font-medium">
+                  {typeof selectedOrder.shippingAddress === 'string'
+                    ? selectedOrder.shippingAddress
+                    : `${selectedOrder.shippingAddress?.street || ''}, ${selectedOrder.shippingAddress?.city || ''}, ${selectedOrder.shippingAddress?.state || ''} ${selectedOrder.shippingAddress?.zipCode || ''}`}
+                </p>
               </div>
               <div className="pt-4 border-t">
                 <div className="flex justify-between items-center">

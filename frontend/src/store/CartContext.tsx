@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, ReactNode, useState, useEffect } from 'react'
+import { createContext, useContext, useReducer, ReactNode, useState, useEffect } from 'react'
 import { Cart, CartItem, Product, ProductVariant } from '@/data/types'
 import { productService } from '@/services/products'
 
@@ -33,7 +33,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     case 'ADD_ITEM': {
       const { product, variant, quantity } = action.payload
       const existingIndex = state.items.findIndex(item => item.variantId === variant.id)
-      
+
       let newItems: CartItem[]
       if (existingIndex >= 0) {
         newItems = state.items.map((item, index) =>
@@ -49,17 +49,17 @@ function cartReducer(state: CartState, action: CartAction): CartState {
           price: variant.price,
         }]
       }
-      
+
       const totals = calculateTotals(newItems)
       return { ...state, items: newItems, ...totals, isOpen: true }
     }
-    
+
     case 'REMOVE_ITEM': {
       const newItems = state.items.filter(item => item.variantId !== action.payload.variantId)
       const totals = calculateTotals(newItems)
       return { ...state, items: newItems, ...totals }
     }
-    
+
     case 'UPDATE_QUANTITY': {
       const { variantId, quantity } = action.payload
       if (quantity <= 0) {
@@ -67,26 +67,26 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         const totals = calculateTotals(newItems)
         return { ...state, items: newItems, ...totals }
       }
-      
+
       const newItems = state.items.map(item =>
         item.variantId === variantId ? { ...item, quantity } : item
       )
       const totals = calculateTotals(newItems)
       return { ...state, items: newItems, ...totals }
     }
-    
+
     case 'CLEAR_CART':
       return { ...initialState }
-    
+
     case 'TOGGLE_CART':
       return { ...state, isOpen: !state.isOpen }
-    
+
     case 'OPEN_CART':
       return { ...state, isOpen: true }
-    
+
     case 'CLOSE_CART':
       return { ...state, isOpen: false }
-    
+
     default:
       return state
   }

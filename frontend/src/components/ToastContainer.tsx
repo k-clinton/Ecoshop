@@ -1,4 +1,3 @@
-import React from 'react'
 import { X, CheckCircle, AlertCircle, Info } from 'lucide-react'
 import { useToast } from '@/store/ToastContext'
 import { cn } from '@/lib/utils'
