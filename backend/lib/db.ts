@@ -7,8 +7,10 @@ const pool = mysql.createPool({
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'ecoshop_db',
   waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
+  connectionLimit: 50, // Increased from 10 to handle more concurrent requests
+  maxIdle: 10, // Maximum number of idle connections
+  idleTimeout: 60000, // Close idle connections after 60 seconds
+  queueLimit: 0, // No limit on queued connection requests
   enableKeepAlive: true,
   keepAliveInitialDelay: 0
 });
