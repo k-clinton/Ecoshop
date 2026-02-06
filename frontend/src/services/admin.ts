@@ -15,6 +15,11 @@ export const adminService = {
     return apiCall<DashboardStats>('/admin/stats');
   },
 
+  // Get all products (admin view)
+  async getProducts(): Promise<any[]> {
+    return apiCall<any[]>('/admin/products');
+  },
+
   // Create product
   async createProduct(productData: any): Promise<any> {
     return apiCall<any>('/admin/products', {

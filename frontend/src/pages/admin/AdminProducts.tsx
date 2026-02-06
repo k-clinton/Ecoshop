@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Plus, Search, Edit2, Trash2, MoreVertical, Image as ImageIcon, X, Upload } from 'lucide-react'
-import { products as mockProducts, categories } from '@/data/mockData'
+import { categories } from '@/data/mockData'
 import { Product, ProductVariant } from '@/data/types'
 import { formatPrice, cn } from '@/lib/utils'
 import { useToast } from '@/store/ToastContext'
+import { adminService } from '@/services/admin'
 
 export function AdminProducts() {
   const { addToast } = useToast()
@@ -27,7 +28,26 @@ export function AdminProducts() {
   const [dragActive, setDragActive] = useState(false)
 
   // Use a state to manage products instead of relying on mock data directly
-  const [products, setProducts] = useState<Product[]>(mockProducts)
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Load products from API on mount
+  useEffect(() => {
+    loadProducts()
+  }, [])
+
+  const loadProducts = async () => {
+    try {
+      setLoading(true)
+      const data = await adminService.getProducts()
+      setProducts(data)
+    } catch (error) {
+      console.error('Failed to load products:', error)
+      addToast('Failed to load products', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   React.useEffect(() => {
     if (editingProduct) {
@@ -75,9 +95,19 @@ export function AdminProducts() {
     setIsModalOpen(true)
   }
 
-  const handleDelete = (product: Product) => {
-    setProducts(products.filter(p => p.id !== product.id))
-    addToast(`"${product.name}" deleted`, 'success')
+  const handleDelete = async (product: Product) => {
+    if (!confirm(`Are you sure you want to delete "${product.name}"?`)) {
+      return
+    }
+    
+    try {
+      await adminService.deleteProduct(product.id)
+      setProducts(products.filter(p => p.id !== product.id))
+      addToast(`"${product.name}" deleted`, 'success')
+    } catch (error) {
+      console.error('Failed to delete product:', error)
+      addToast('Failed to delete product', 'error')
+    }
   }
 
   const handleAddVariant = () => {
@@ -144,55 +174,26 @@ export function AdminProducts() {
     })
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.name || !formData.category) {
       addToast('Please fill in required fields', 'error')
       return
     }
 
-    if (editingProduct) {
-      // Update existing product
-      const updatedProducts = products.map(p => 
-        p.id === editingProduct.id 
-          ? {
-              ...p,
-              name: formData.name,
-              description: formData.description,
-              price: formData.price,
-              compareAtPrice: formData.compareAtPrice || undefined,
-              category: formData.category,
-              stock: formData.stock,
-              featured: formData.featured,
-              variants: formData.variants.map((v, i) => ({
-                id: p.variants[i]?.id || `v${Date.now()}${i}`,
-                name: v.name,
-                sku: v.sku,
-                price: v.price,
-                stock: v.stock,
-                available: v.stock > 0,
-              })),
-              tags: formData.tags,
-              images: formData.images.length > 0 ? formData.images : p.images,
-            }
-          : p
-      )
-      setProducts(updatedProducts)
-      addToast('Product updated successfully!', 'success')
-    } else {
-      // Create new product
-      const newProduct: Product = {
-        id: `prod-${Date.now()}`,
+    try {
+      const productData = {
         name: formData.name,
         slug: formData.name.toLowerCase().replace(/\s+/g, '-'),
         description: formData.description,
         price: formData.price,
         compareAtPrice: formData.compareAtPrice || undefined,
-        images: formData.images.length > 0 ? formData.images : ['/images/product-blank.jpg'],
         category: formData.category,
+        stock: formData.stock,
+        featured: formData.featured,
+        images: formData.images.length > 0 ? formData.images : ['/images/product-blank.jpg'],
         tags: formData.tags,
         variants: formData.variants.length > 0 
-          ? formData.variants.map((v, i) => ({
-              id: `v${Date.now()}${i}`,
+          ? formData.variants.map(v => ({
               name: v.name,
               sku: v.sku,
               price: v.price,
@@ -200,25 +201,35 @@ export function AdminProducts() {
               available: v.stock > 0,
             }))
           : [{
-              id: `v${Date.now()}0`,
               name: 'Default',
               sku: `SKU-${Date.now()}`,
               price: formData.price,
               stock: formData.stock,
               available: formData.stock > 0,
             }],
-        featured: formData.featured,
-        rating: 4.5,
+        rating: 0,
         reviewCount: 0,
-        stock: formData.variants.reduce((sum, v) => sum + v.stock, 0),
-        createdAt: new Date().toISOString().split('T')[0],
       }
-      setProducts([...products, newProduct])
-      addToast('Product created successfully!', 'success')
+
+      if (editingProduct) {
+        // Update existing product
+        await adminService.updateProduct(editingProduct.id, productData)
+        addToast('Product updated successfully!', 'success')
+      } else {
+        // Create new product
+        await adminService.createProduct(productData)
+        addToast('Product created successfully!', 'success')
+      }
+      
+      // Reload products from API
+      await loadProducts()
+      
+      setIsModalOpen(false)
+      setEditingProduct(null)
+    } catch (error) {
+      console.error('Failed to save product:', error)
+      addToast('Failed to save product', 'error')
     }
-    
-    setIsModalOpen(false)
-    setEditingProduct(null)
   }
 
   return (
@@ -276,7 +287,20 @@ export function AdminProducts() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {filteredProducts.map((product) => {
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                    Loading products...
+                  </td>
+                </tr>
+              ) : filteredProducts.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                    No products found. Create your first product to get started.
+                  </td>
+                </tr>
+              ) : null}
+              {!loading && filteredProducts.map((product) => {
                 const category = categories.find(c => c.id === product.category)
                 return (
                   <tr key={product.id} className="hover:bg-muted/30">
