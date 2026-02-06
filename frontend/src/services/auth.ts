@@ -20,7 +20,7 @@ export const authService = {
       method: 'POST',
       body: JSON.stringify({ email, password, name }),
     });
-    
+
     return data;
   },
 
@@ -30,7 +30,7 @@ export const authService = {
       method: 'POST',
       body: JSON.stringify({ userId, code }),
     });
-    
+
     localStorage.setItem('authToken', data.token);
     this.startSessionMonitor();
     return data;
@@ -50,7 +50,7 @@ export const authService = {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    
+
     localStorage.setItem('authToken', data.token);
     this.startSessionMonitor();
     return data;
@@ -62,7 +62,7 @@ export const authService = {
       method: 'POST',
       body: JSON.stringify({ credential }),
     });
-    
+
     localStorage.setItem('authToken', data.token);
     this.startSessionMonitor();
     return data;
@@ -73,7 +73,7 @@ export const authService = {
     const data = await apiCall<{ token: string }>('/auth/refresh', {
       method: 'POST',
     });
-    
+
     localStorage.setItem('authToken', data.token);
     return data;
   },
@@ -102,23 +102,23 @@ export const authService = {
 
   // Session monitoring (10 minute timeout)
   sessionTimeoutInterval: null as number | null,
-  
+
   startSessionMonitor() {
     this.updateActivity();
-    
+
     // Check activity every minute
     this.sessionTimeoutInterval = setInterval(() => {
       const lastActivity = localStorage.getItem('lastActivity');
       if (lastActivity) {
         const timeSinceActivity = Date.now() - parseInt(lastActivity);
-        const tenMinutes = 10 * 60 * 1000;
-        
-        if (timeSinceActivity >= tenMinutes) {
+        const fifteenMinutes = 15 * 60 * 1000;
+
+        if (timeSinceActivity >= fifteenMinutes) {
           // Session expired - silently log out
           this.logout();
           window.dispatchEvent(new CustomEvent('auth:session-expired'));
-        } else if (timeSinceActivity >= 8 * 60 * 1000) {
-          // 8 minutes - refresh token
+        } else if (timeSinceActivity >= 12 * 60 * 1000) {
+          // 12 minutes - refresh token
           this.refreshToken().catch(() => {
             this.logout();
             window.dispatchEvent(new CustomEvent('auth:session-expired'));
@@ -126,20 +126,20 @@ export const authService = {
         }
       }
     }, 60000); // Check every minute
-    
+
     // Update activity on user interactions
     ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(event => {
       document.addEventListener(event, () => this.updateActivity(), { passive: true });
     });
   },
-  
+
   stopSessionMonitor() {
     if (this.sessionTimeoutInterval) {
       clearInterval(this.sessionTimeoutInterval);
       this.sessionTimeoutInterval = null;
     }
   },
-  
+
   updateActivity() {
     localStorage.setItem('lastActivity', Date.now().toString());
   }
