@@ -14,6 +14,7 @@ export function AdminSettings() {
         site_name: '',
         support_email: '',
         currency: 'USD',
+        exchange_rate: 1.0,
         shipping_fee: 0,
         free_shipping_threshold: 0,
         maintenance_mode: false
@@ -27,6 +28,7 @@ export function AdminSettings() {
                 site_name: settings.site_name,
                 support_email: settings.support_email,
                 currency: settings.currency,
+                exchange_rate: settings.exchange_rate,
                 shipping_fee: settings.shipping_fee,
                 free_shipping_threshold: settings.free_shipping_threshold,
                 maintenance_mode: settings.maintenance_mode
@@ -113,6 +115,21 @@ export function AdminSettings() {
                                 <option value="GBP">GBP (£)</option>
                                 <option value="KES">KES (KSh.)</option>
                             </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-2">Exchange Rate</label>
+                            <input
+                                type="number"
+                                name="exchange_rate"
+                                step="0.0001"
+                                className="input"
+                                value={formData.exchange_rate}
+                                onChange={handleChange}
+                                disabled={isSaving}
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">
+                                1 USD = {formData.exchange_rate} {formData.currency}
+                            </p>
                         </div>
                     </div>
                 </div>

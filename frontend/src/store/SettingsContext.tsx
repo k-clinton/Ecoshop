@@ -15,6 +15,7 @@ const defaultSettings: StoreSettings = {
     site_name: 'EcoShop',
     support_email: 'support@ecoshop.com',
     currency: 'USD',
+    exchange_rate: 1.0000,
     shipping_fee: 5.99,
     free_shipping_threshold: 50.00,
     maintenance_mode: false
@@ -57,17 +58,21 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
     const formatPrice = (price: number): string => {
         const currency = settings?.currency || 'USD';
+        const exchangeRate = settings?.exchange_rate || 1.0;
+        
+        // Convert price using exchange rate
+        const convertedPrice = price * exchangeRate;
         
         // Special handling for KES (Kenyan Shilling)
         if (currency === 'KES') {
-            return `KSh. ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            return `KSh. ${convertedPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         }
         
         const formatter = new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: currency,
         });
-        return formatter.format(price);
+        return formatter.format(convertedPrice);
     };
 
     // Maintenance Mode Logic

@@ -5,6 +5,7 @@ export interface StoreSettings {
     site_name: string;
     support_email: string;
     currency: string;
+    exchange_rate: number;
     shipping_fee: number;
     free_shipping_threshold: number;
     maintenance_mode: boolean;
@@ -17,6 +18,7 @@ export const settingsService = {
         // Ensure numeric values are numbers (API might return strings for decimals)
         return {
             ...data,
+            exchange_rate: Number(data.exchange_rate),
             shipping_fee: Number(data.shipping_fee),
             free_shipping_threshold: Number(data.free_shipping_threshold),
             maintenance_mode: Boolean(data.maintenance_mode)

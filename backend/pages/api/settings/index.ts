@@ -19,6 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     site_name: 'EcoShop',
                     support_email: 'support@ecoshop.com',
                     currency: 'USD',
+                    exchange_rate: 1.0000,
                     shipping_fee: 5.99,
                     free_shipping_threshold: 50.00,
                     maintenance_mode: 0
@@ -29,6 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return sendSuccess(res, {
                 ...settings,
                 maintenance_mode: !!settings.maintenance_mode,
+                exchange_rate: parseFloat(settings.exchange_rate),
                 shipping_fee: parseFloat(settings.shipping_fee),
                 free_shipping_threshold: parseFloat(settings.free_shipping_threshold)
             });
@@ -42,6 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 site_name,
                 support_email,
                 currency,
+                exchange_rate,
                 shipping_fee,
                 free_shipping_threshold,
                 maintenance_mode
@@ -52,6 +55,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
          site_name = ?, 
          support_email = ?, 
          currency = ?, 
+         exchange_rate = ?,
          shipping_fee = ?, 
          free_shipping_threshold = ?, 
          maintenance_mode = ? 
@@ -60,6 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     site_name,
                     support_email,
                     currency,
+                    exchange_rate,
                     shipping_fee,
                     free_shipping_threshold,
                     maintenance_mode
