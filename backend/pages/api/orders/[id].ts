@@ -44,7 +44,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       );
 
       order.items = items;
-      order.shippingAddress = JSON.parse(order.shippingAddress);
+
+      // Safe JSON parsing for shippingAddress
+      if (order.shippingAddress && typeof order.shippingAddress === 'string') {
+        try {
+          order.shippingAddress = JSON.parse(order.shippingAddress);
+        } catch (e) {
+          console.error('Error parsing shippingAddress:', e);
+        }
+      }
+
+      // Enrich items with product information
+      for (const item of order.items as any[]) {
+        const [productRows] = await pool.execute(
+          'SELECT name FROM products WHERE id = ?',
+          [item.productId]
+        );
+        item.productName = (productRows as any[])[0]?.name || 'Unknown Product';
+
+        const [imageRows] = await pool.execute(
+          'SELECT image_url FROM product_images WHERE product_id = ? ORDER BY sort_order LIMIT 1',
+          [item.productId]
+        );
+        item.productImage = (imageRows as any[])[0]?.image_url || '';
+      }
 
       return sendSuccess(res, order);
     } catch (error) {
@@ -76,7 +99,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return sendError(res, 'Order not found', 404);
       }
 
-      // Fetch updated order
+      // Fetch updated order enriched with product data
       const [rows] = await pool.execute(
         `SELECT id, user_id as userId, subtotal, shipping, tax, total, status,
                 shipping_address as shippingAddress, created_at as createdAt,
@@ -97,7 +120,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       );
 
       order.items = items;
-      order.shippingAddress = JSON.parse(order.shippingAddress);
+
+      // Safe JSON parsing for shippingAddress
+      if (order.shippingAddress && typeof order.shippingAddress === 'string') {
+        try {
+          order.shippingAddress = JSON.parse(order.shippingAddress);
+        } catch (e) {
+          console.error('Error parsing shippingAddress:', e);
+        }
+      }
+
+      // Enrich items with product information
+      for (const item of order.items as any[]) {
+        const [productRows] = await pool.execute(
+          'SELECT name FROM products WHERE id = ?',
+          [item.productId]
+        );
+        item.productName = (productRows as any[])[0]?.name || 'Unknown Product';
+
+        const [imageRows] = await pool.execute(
+          'SELECT image_url FROM product_images WHERE product_id = ? ORDER BY sort_order LIMIT 1',
+          [item.productId]
+        );
+        item.productImage = (imageRows as any[])[0]?.image_url || '';
+      }
 
       return sendSuccess(res, order);
     } catch (error) {

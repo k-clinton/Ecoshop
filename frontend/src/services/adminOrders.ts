@@ -31,7 +31,7 @@ export const adminOrderService = {
   },
 
   async updateOrderStatus(orderId: string, status: string): Promise<AdminOrder> {
-    const response = await apiCall<AdminOrder>(`/orders/${orderId}`, {
+    const response = await apiCall<AdminOrder>(`/admin/orders/${orderId}`, {
       method: 'PATCH',
       body: JSON.stringify({ status })
     });
