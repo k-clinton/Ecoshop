@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom'
 import { Leaf, Instagram, Twitter, Facebook } from 'lucide-react'
+import { useSettings } from '@/store/SettingsContext'
 
 export function Footer() {
+  const { settings } = useSettings()
+
   return (
     <footer className="border-t bg-secondary/30">
       <div className="container-wide py-12 md:py-16">
@@ -10,7 +13,7 @@ export function Footer() {
           <div className="lg:col-span-1">
             <Link to="/" className="flex items-center gap-2 font-display text-xl font-semibold text-foreground mb-4">
               <Leaf className="h-6 w-6 text-primary" />
-              <span>EcoShop</span>
+              <span>{settings?.site_name || 'EcoShop'}</span>
             </Link>
             <p className="text-sm text-muted-foreground mb-6">
               Curating sustainable products for conscious living. Every purchase makes a difference.
@@ -118,7 +121,7 @@ export function Footer() {
         <div className="mt-12 pt-8 border-t border-border">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">
-              © 2024 EcoShop. All rights reserved.
+              © 2024 {settings?.site_name || 'EcoShop'}. All rights reserved.
             </p>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-1">

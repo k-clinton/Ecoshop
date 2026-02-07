@@ -111,6 +111,7 @@ export function AdminSettings() {
                                 <option value="USD">USD ($)</option>
                                 <option value="EUR">EUR (€)</option>
                                 <option value="GBP">GBP (£)</option>
+                                <option value="KES">KSh (Kenyan Shilling)</option>
                             </select>
                         </div>
                     </div>

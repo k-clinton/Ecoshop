@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ShoppingBag, Search, Menu, X, Leaf, User, LogOut, Settings } from 'lucide-react'
 import { useCart } from '@/store/CartContext'
 import { useAuth } from '@/store/AuthContext'
+import { useSettings } from '@/store/SettingsContext'
 
 interface HeaderProps {
   onMenuOpen?: () => void
@@ -11,6 +12,7 @@ interface HeaderProps {
 export function Header({ onMenuOpen }: HeaderProps) {
   const { itemCount, toggleCart } = useCart()
   const { user, isAuthenticated, signOut } = useAuth()
+  const { settings } = useSettings()
   const [isSearchOpen, setIsSearchOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState('')
   const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false)
@@ -31,7 +33,7 @@ export function Header({ onMenuOpen }: HeaderProps) {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 font-display text-xl font-semibold text-foreground">
             <Leaf className="h-6 w-6 text-primary" />
-            <span>EcoShop</span>
+            <span>{settings?.site_name || 'EcoShop'}</span>
           </Link>
 
           {/* Desktop Navigation */}
