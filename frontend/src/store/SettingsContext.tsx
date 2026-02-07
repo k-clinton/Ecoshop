@@ -60,7 +60,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         
         // Special handling for KES (Kenyan Shilling)
         if (currency === 'KES') {
-            return `KSh ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            return `KSh. ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         }
         
         const formatter = new Intl.NumberFormat('en-US', {
