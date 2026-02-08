@@ -33,12 +33,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const user = userArray[0];
 
-    // Check if user has a password set (some OAuth-only users might not have passwords)
+    // Verify password (only if password is set)
     if (!user.password) {
-      return sendError(res, `Please sign in with ${user.oauth_provider || 'your OAuth provider'}`, 400);
+      return sendError(res, `This account was created with ${user.oauth_provider || 'OAuth'}. Please sign in with ${user.oauth_provider || 'your OAuth provider'}, or contact support to set a password.`, 400);
     }
-
-    // Verify password
+    
     const isValid = await verifyPassword(password, user.password);
     if (!isValid) {
       return sendError(res, 'Invalid credentials', 401);
@@ -55,12 +54,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       [user.id]
     );
 
-    // Generate token with 10-minute expiry
+    // Generate token with 15-minute expiry
     const token = generateToken({
       userId: user.id,
       email: user.email,
       role: user.role
-    }, '10m');
+    }, '15m');
 
     return sendSuccess(res, {
       token,

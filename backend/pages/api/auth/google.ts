@@ -48,8 +48,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (userArray.length > 0) {
       user = userArray[0];
       
-      // If user exists but not with OAuth, link the account
-      if (!user.oauth_provider) {
+      // If user exists but not with OAuth, link the Google account
+      if (!user.oauth_provider || !user.oauth_id) {
         // Link the Google account to the existing user account
         await pool.execute(
           'UPDATE users SET oauth_provider = ?, oauth_id = ?, email_verified = 1, last_activity = CURRENT_TIMESTAMP WHERE id = ?',
@@ -82,12 +82,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       };
     }
 
-    // Generate token with 10-minute expiry
+    // Generate token with 15-minute expiry
     const token = generateToken({
       userId: user.id,
       email: user.email,
       role: user.role
-    }, '10m');
+    }, '15m');
 
     return sendSuccess(res, {
       token,
