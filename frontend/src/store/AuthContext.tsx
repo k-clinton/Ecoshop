@@ -37,15 +37,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           authService.startSessionMonitor()
         } catch (error: any) {
           console.error('Failed to load user:', error);
-          // Only log out if specifically unauthorized or forbidden
+          // Only log out if specifically unauthorized, forbidden, or session expired
           if (error.status === 401 || error.status === 403 || error.message === 'Session expired') {
             authService.logout()
+            setState({ user: null, isAuthenticated: false, isLoading: false })
+          } else {
+            // For other errors (network, server down, etc.), keep the authenticated state
+            // The user still has a valid token, just couldn't fetch user data right now
+            // This prevents logout on page refresh when there are temporary network issues
+            console.warn('Could not load user data, but token is still valid. Keeping session active.')
+            setState({ user: null, isAuthenticated: true, isLoading: false })
+            // Still start session monitor to handle activity tracking
+            authService.startSessionMonitor()
           }
-          // For other errors (network, server), we stop loading but don't necessarily clear token immediately
-          // giving the user a chance to refresh or retry.
-          // However, if we can't load the user, the app might not render correctly.
-          // Setting isAuthenticated: false will redirect to login in protected routes.
-          setState({ user: null, isAuthenticated: false, isLoading: false })
         }
       } else {
         setState({ user: null, isAuthenticated: false, isLoading: false })
