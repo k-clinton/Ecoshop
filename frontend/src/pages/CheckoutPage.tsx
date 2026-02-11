@@ -1,12 +1,14 @@
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Truck, ChevronRight, Lock, CheckCircle } from 'lucide-react'
+import { Truck, ChevronRight, Lock, CheckCircle, MapPin } from 'lucide-react'
 import { useCart } from '@/store/CartContext'
 import { useToast } from '@/store/ToastContext'
 import { useSettings } from '@/store/SettingsContext'
+import { useAuth } from '@/store/AuthContext'
 import { cn } from '@/lib/utils'
 import { orderService } from '@/services/orders'
+import { profileService, type Address } from '@/services/profile'
 
 type CheckoutStep = 'information' | 'shipping' | 'payment' | 'confirmation'
 
@@ -14,8 +16,10 @@ export function CheckoutPage() {
   const { items, subtotal, clearCart, getCartItemDetails } = useCart()
   const { addToast } = useToast()
   const { formatPrice } = useSettings()
+  const { isAuthenticated, user } = useAuth()
   const [step, setStep] = useState<CheckoutStep>('information')
   const [isProcessing, setIsProcessing] = useState(false)
+  const [savedAddresses, setSavedAddresses] = useState<Address[]>([])
 
   const [formData, setFormData] = useState({
     email: '',
@@ -36,8 +40,47 @@ export function CheckoutPage() {
   const tax = subtotal * 0.08
   const total = subtotal + shipping + tax
 
+  // Load saved addresses when user is authenticated
+  useEffect(() => {
+    const loadAddresses = async () => {
+      if (isAuthenticated) {
+        try {
+          const addresses = await profileService.getAddresses()
+          setSavedAddresses(addresses)
+          
+          // Auto-fill with user's email if available
+          if (user?.email && !formData.email) {
+            setFormData(prev => ({ ...prev, email: user.email }))
+          }
+        } catch (error) {
+          console.error('Failed to load addresses:', error)
+        }
+      }
+    }
+    loadAddresses()
+  }, [isAuthenticated, user])
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
+  }
+
+  const handleUseAddress = (address: Address) => {
+    const nameParts = address.name.split(' ')
+    const firstName = nameParts[0] || ''
+    const lastName = nameParts.slice(1).join(' ') || ''
+    
+    setFormData(prev => ({
+      ...prev,
+      firstName,
+      lastName,
+      address: address.street,
+      city: address.city,
+      state: address.state,
+      zip: address.zip,
+      country: address.country,
+    }))
+    
+    addToast('Address filled successfully', 'success')
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -187,6 +230,49 @@ export function CheckoutPage() {
                     </div>
 
                     <h2 className="text-xl font-semibold mt-8 mb-4">Shipping Address</h2>
+                    
+                    {/* Saved Addresses Section */}
+                    {isAuthenticated && savedAddresses.length > 0 && (
+                      <div className="mb-6 p-4 bg-muted/50 rounded-lg border border-border">
+                        <div className="flex items-center gap-2 mb-3">
+                          <MapPin className="h-4 w-4 text-primary" />
+                          <h3 className="text-sm font-medium">Use a saved address</h3>
+                        </div>
+                        <div className="space-y-2">
+                          {savedAddresses.map((address) => (
+                            <button
+                              key={address.id}
+                              type="button"
+                              onClick={() => handleUseAddress(address)}
+                              className={cn(
+                                "w-full text-left p-3 rounded-lg border transition-all",
+                                "hover:border-primary hover:bg-primary/5",
+                                address.isDefault && "border-primary/50 bg-primary/5"
+                              )}
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <p className="font-medium text-sm">{address.name}</p>
+                                  <p className="text-sm text-muted-foreground mt-1">
+                                    {address.street}, {address.city}, {address.state} {address.zip}
+                                  </p>
+                                  {address.isDefault && (
+                                    <span className="inline-block mt-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                                      Default
+                                    </span>
+                                  )}
+                                </div>
+                                <ChevronRight className="h-4 w-4 text-muted-foreground ml-2 flex-shrink-0" />
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-3">
+                          Click an address to autofill the form below
+                        </p>
+                      </div>
+                    )}
+                    
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium mb-2">First Name</label>
