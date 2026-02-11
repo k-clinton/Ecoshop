@@ -173,7 +173,7 @@ export function AdminCustomers() {
 
             {/* Customers Table */}
             <div className="card overflow-hidden">
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto min-h-[calc(100vh-20rem)]">
                     <table className="w-full">
                         <thead>
                             <tr className="border-b bg-muted/50">
