@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react'
 import { User } from '@/data/types'
 import { authService } from '@/services/auth'
+import { resetSessionExpiredFlag } from '@/services/api'
 
 interface AuthState {
   user: User | null
@@ -84,6 +85,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Stop any existing session monitor
       authService.stopSessionMonitor()
 
+      // Reset session expired flag for fresh login
+      resetSessionExpiredFlag()
+
       // Login will set new token
       const { user } = await authService.login(email, password)
       setState({ user, isAuthenticated: true, isLoading: false })
@@ -108,6 +112,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const verifyEmail = async (userId: string, code: string): Promise<{ success: boolean; error?: string }> => {
     try {
+      // Reset session expired flag for fresh login
+      resetSessionExpiredFlag()
+      
       const response = await authService.verifyEmail(userId, code)
       const { user } = response
       setState({ user, isAuthenticated: true, isLoading: false })
@@ -134,6 +141,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Stop any existing session monitor
       authService.stopSessionMonitor()
+
+      // Reset session expired flag for fresh login
+      resetSessionExpiredFlag()
 
       // Google sign in will set new token
       const { user } = await authService.googleSignIn(credential)

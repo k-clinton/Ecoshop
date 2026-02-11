@@ -1,4 +1,4 @@
-import apiCall from './api';
+import apiCall, { resetSessionExpiredFlag } from './api';
 import { User } from '../data/types';
 
 export interface AuthResponse {
@@ -100,13 +100,18 @@ export const authService = {
     return localStorage.getItem('authToken');
   },
 
-  // Session monitoring (10 minute timeout)
+  // Session monitoring (15 minute inactivity timeout)
   sessionTimeoutInterval: null as number | null,
   activityListeners: [] as Array<{ event: string; handler: () => void }>,
+  sessionExpiredFired: false,
 
   startSessionMonitor() {
     // Stop any existing monitor first to prevent duplicates
     this.stopSessionMonitor();
+    
+    // Reset the session expired flag when starting fresh session
+    this.sessionExpiredFired = false;
+    resetSessionExpiredFlag();
     
     this.updateActivity();
 
@@ -118,14 +123,20 @@ export const authService = {
         const fifteenMinutes = 15 * 60 * 1000;
 
         if (timeSinceActivity >= fifteenMinutes) {
-          // Session expired - silently log out
-          this.logout();
-          window.dispatchEvent(new CustomEvent('auth:session-expired'));
-        } else if (timeSinceActivity >= 12 * 60 * 1000) {
-          // 12 minutes - refresh token
-          this.refreshToken().catch(() => {
+          // Session expired - silently log out (only fire once)
+          if (!this.sessionExpiredFired) {
+            this.sessionExpiredFired = true;
             this.logout();
             window.dispatchEvent(new CustomEvent('auth:session-expired'));
+          }
+        } else if (timeSinceActivity >= 12 * 60 * 1000) {
+          // 12 minutes - refresh token to keep session alive
+          this.refreshToken().catch(() => {
+            if (!this.sessionExpiredFired) {
+              this.sessionExpiredFired = true;
+              this.logout();
+              window.dispatchEvent(new CustomEvent('auth:session-expired'));
+            }
           });
         }
       } else {
@@ -153,6 +164,9 @@ export const authService = {
       document.removeEventListener(event, handler);
     });
     this.activityListeners = [];
+    
+    // Reset session expired flag
+    this.sessionExpiredFired = false;
   },
 
   updateActivity() {

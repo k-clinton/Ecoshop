@@ -13,6 +13,9 @@ class ApiError extends Error {
   }
 }
 
+// Flag to prevent multiple session expired notifications
+let sessionExpiredNotified = false;
+
 // Helper function for API calls
 async function apiCall<T>(
   endpoint: string,
@@ -49,8 +52,11 @@ async function apiCall<T>(
       localStorage.removeItem('authToken');
       localStorage.removeItem('lastActivity');
 
-      // Dispatch a custom event for auth context to handle
-      window.dispatchEvent(new CustomEvent('auth:session-expired'));
+      // Dispatch a custom event for auth context to handle (only once)
+      if (!sessionExpiredNotified) {
+        sessionExpiredNotified = true;
+        window.dispatchEvent(new CustomEvent('auth:session-expired'));
+      }
 
       throw new ApiError('Session expired', 401);
     }
@@ -72,6 +78,11 @@ async function apiCall<T>(
     }
     throw new ApiError('Network error or server unavailable');
   }
+}
+
+// Export function to reset session expired flag (used when user signs in again)
+export function resetSessionExpiredFlag() {
+  sessionExpiredNotified = false;
 }
 
 export default apiCall;
