@@ -18,6 +18,14 @@ import { SignUpPage } from '@/pages/SignUpPage'
 import VerifyEmailPage from '@/pages/VerifyEmailPage'
 import { AccountPage } from '@/pages/AccountPage'
 import { OrderDetailPage } from '@/pages/OrderDetailPage'
+import { AboutPage } from '@/pages/AboutPage'
+import { SustainabilityPage } from '@/pages/SustainabilityPage'
+import { ContactPage } from '@/pages/ContactPage'
+import { BlogPage } from '@/pages/BlogPage'
+import { FAQPage } from '@/pages/FAQPage'
+import { ShippingPage } from '@/pages/ShippingPage'
+import { PrivacyPage } from '@/pages/PrivacyPage'
+import { TermsPage } from '@/pages/TermsPage'
 import { AdminLayout } from '@/pages/admin/AdminLayout'
 import { AdminDashboard } from '@/pages/admin/AdminDashboard'
 import { AdminProducts } from '@/pages/admin/AdminProducts'
@@ -55,6 +63,16 @@ function App() {
                 <Route path="/verify-email" element={<StoreLayout><VerifyEmailPage /></StoreLayout>} />
                 <Route path="/account" element={<StoreLayout><AccountPage /></StoreLayout>} />
                 <Route path="/orders/:id" element={<StoreLayout><OrderDetailPage /></StoreLayout>} />
+                
+                {/* Footer Pages */}
+                <Route path="/about" element={<StoreLayout><AboutPage /></StoreLayout>} />
+                <Route path="/sustainability" element={<StoreLayout><SustainabilityPage /></StoreLayout>} />
+                <Route path="/contact" element={<StoreLayout><ContactPage /></StoreLayout>} />
+                <Route path="/blog" element={<StoreLayout><BlogPage /></StoreLayout>} />
+                <Route path="/faq" element={<StoreLayout><FAQPage /></StoreLayout>} />
+                <Route path="/shipping" element={<StoreLayout><ShippingPage /></StoreLayout>} />
+                <Route path="/privacy" element={<StoreLayout><PrivacyPage /></StoreLayout>} />
+                <Route path="/terms" element={<StoreLayout><TermsPage /></StoreLayout>} />
 
                 {/* Admin Routes */}
                 <Route path="/admin" element={<AdminLayout />}>

@@ -4,6 +4,7 @@ export interface StoreSettings {
     id: string;
     site_name: string;
     support_email: string;
+    contact_email: string;
     currency: string;
     exchange_rate: number;
     shipping_fee: number;

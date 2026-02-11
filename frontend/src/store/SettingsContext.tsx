@@ -14,6 +14,7 @@ const defaultSettings: StoreSettings = {
     id: 'default',
     site_name: 'EcoShop',
     support_email: 'support@ecoshop.com',
+    contact_email: 'contact@ecoshop.com',
     currency: 'USD',
     exchange_rate: 1.0000,
     shipping_fee: 5.99,
