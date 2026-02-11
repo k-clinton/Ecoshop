@@ -48,14 +48,16 @@ export function AdminSettings() {
     }
 
     const handleSave = async () => {
+        setIsSaving(true)
+        isSavingRef.current = true
+        
         try {
-            setIsSaving(true)
-            isSavingRef.current = true
             await updateSettings(formData);
+            // Show success notification after update completes
             addToast('Settings saved successfully', 'success')
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to save settings:', error)
-            addToast('Failed to save settings', 'error')
+            addToast(error?.message || 'Failed to save settings', 'error')
         } finally {
             setIsSaving(false)
             // Delay clearing the flag to ensure settings update completes

@@ -27,7 +27,7 @@ export const settingsService = {
 
     // Update settings (Admin only)
     async updateSettings(settings: Partial<StoreSettings>): Promise<void> {
-        return apiCall<void>('/settings', {
+        await apiCall<{ message: string }>('/settings', {
             method: 'PUT',
             body: JSON.stringify(settings),
         });

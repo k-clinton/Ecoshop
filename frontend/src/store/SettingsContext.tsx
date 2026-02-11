@@ -51,9 +51,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     };
 
     const updateSettings = async (newSettings: Partial<StoreSettings>) => {
-        await settingsService.updateSettings(newSettings);
-        // Optimistic update or refresh
-        await loadSettings();
+        try {
+            await settingsService.updateSettings(newSettings);
+            // Refresh settings after successful update
+            await loadSettings();
+        } catch (error) {
+            // Re-throw error so calling component can handle it
+            throw error;
+        }
     };
 
     const formatPrice = (price: number): string => {
