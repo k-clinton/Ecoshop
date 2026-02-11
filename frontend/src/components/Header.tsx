@@ -1,9 +1,9 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
-import { ShoppingBag, Search, Menu, X, Leaf, User, LogOut, Settings } from 'lucide-react'
-import { useCart } from '@/store/CartContext'
-import { useAuth } from '@/store/AuthContext'
-import { useSettings } from '@/store/SettingsContext'
+import { Link, useNavigate } from 'react-router-dom'
+import { ShoppingBag, Search, Menu, Leaf, User, LogOut, Settings } from 'lucide-react'
+import { useCart } from '../store/CartContext'
+import { useAuth } from '../store/AuthContext'
+import { useSettings } from '../store/SettingsContext'
 
 interface HeaderProps {
   onMenuOpen?: () => void
@@ -13,9 +13,16 @@ export function Header({ onMenuOpen }: HeaderProps) {
   const { itemCount, toggleCart } = useCart()
   const { user, isAuthenticated, signOut } = useAuth()
   const { settings } = useSettings()
-  const [isSearchOpen, setIsSearchOpen] = React.useState(false)
+  const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = React.useState('')
   const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false)
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`)
+    }
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -30,65 +37,30 @@ export function Header({ onMenuOpen }: HeaderProps) {
             <Menu className="h-5 w-5" />
           </button>
 
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 font-display text-xl font-semibold text-foreground">
-            <Leaf className="h-6 w-6 text-primary" />
-            <span>{settings?.site_name || 'EcoShop'}</span>
-          </Link>
+          {/* Centered content: Logo and Search */}
+          <div className="flex items-center justify-center gap-6 flex-1">
+            {/* Logo */}
+            <Link to="/" className="flex items-center gap-2 font-display text-xl font-semibold text-foreground mr-8">
+              <Leaf className="h-6 w-6 text-primary" />
+              <span>{settings?.site_name || 'EcoShop'}</span>
+            </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-8">
-            <Link to="/products" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              All Products
-            </Link>
-            <Link to="/products?category=home-living" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Home & Living
-            </Link>
-            <Link to="/products?category=beauty-care" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Beauty & Care
-            </Link>
-            <Link to="/products?category=fashion" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Fashion
-            </Link>
-            <Link to="/products?category=kitchen" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Kitchen
-            </Link>
-          </nav>
+            {/* Search Bar */}
+            <form onSubmit={handleSearch} className="hidden md:flex items-center relative">
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch(e)}
+                className="input h-9 w-64 lg:w-80 pl-10"
+              />
+              <Search className="h-4 w-4 text-muted-foreground absolute left-3 pointer-events-none" />
+            </form>
+          </div>
 
           {/* Actions */}
           <div className="flex items-center gap-2">
-            {/* Search */}
-            <div className="relative">
-              {isSearchOpen ? (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    placeholder="Search products..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="input h-9 w-48 md:w-64"
-                    autoFocus
-                  />
-                  <button
-                    onClick={() => {
-                      setIsSearchOpen(false)
-                      setSearchQuery('')
-                    }}
-                    className="btn-ghost p-2"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setIsSearchOpen(true)}
-                  className="btn-ghost p-2"
-                  aria-label="Search"
-                >
-                  <Search className="h-5 w-5" />
-                </button>
-              )}
-            </div>
 
             {/* User Menu */}
             {isAuthenticated ? (
