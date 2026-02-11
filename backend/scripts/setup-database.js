@@ -90,7 +90,22 @@ CREATE TABLE IF NOT EXISTS users (
   INDEX idx_oauth_provider_id (oauth_provider, oauth_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Email verification codes table
+-- Pending registrations table (before email verification)
+CREATE TABLE IF NOT EXISTS pending_registrations (
+  id VARCHAR(50) PRIMARY KEY,
+  email VARCHAR(255) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  role ENUM('customer', 'admin') DEFAULT 'customer',
+  verification_code VARCHAR(6) NOT NULL,
+  code_expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_email (email),
+  INDEX idx_verification_code (verification_code),
+  INDEX idx_code_expires_at (code_expires_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Email verification codes table (for password reset and existing users)
 CREATE TABLE IF NOT EXISTS email_verification_codes (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id VARCHAR(50) NOT NULL,

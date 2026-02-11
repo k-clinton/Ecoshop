@@ -19,7 +19,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return sendError(res, 'Email is required');
     }
 
-    // Find user
+    // First, check if there's a pending registration
+    const [pendingRegs] = await pool.execute(
+      'SELECT id, name, email FROM pending_registrations WHERE email = ?',
+      [email]
+    );
+
+    const pendingArray = pendingRegs as any[];
+    
+    if (pendingArray.length > 0) {
+      // This is a pending registration - update the verification code
+      const pending = pendingArray[0];
+
+      // Generate new verification code
+      const verificationCode = generateVerificationCode();
+      const codeExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+
+      // Update the pending registration with new code
+      await pool.execute(
+        'UPDATE pending_registrations SET verification_code = ?, code_expires_at = ? WHERE id = ?',
+        [verificationCode, codeExpiresAt, pending.id]
+      );
+
+      // Send verification email
+      await sendVerificationEmail(email, verificationCode, pending.name);
+
+      return sendSuccess(res, {
+        message: 'Verification code sent successfully'
+      });
+    }
+
+    // If not a pending registration, check for existing user
     const [users] = await pool.execute(
       'SELECT id, name, email_verified FROM users WHERE email = ?',
       [email]

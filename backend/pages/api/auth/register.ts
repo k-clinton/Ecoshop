@@ -20,7 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return sendError(res, 'Email, password, and name are required');
     }
 
-    // Check if user already exists
+    // Check if user already exists in users table
     const [existingUsers] = await pool.execute(
       'SELECT id FROM users WHERE email = ?',
       [email]
@@ -30,27 +30,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return sendError(res, 'User already exists', 409);
     }
 
+    // Check if pending registration already exists
+    const [existingPending] = await pool.execute(
+      'SELECT id FROM pending_registrations WHERE email = ?',
+      [email]
+    );
+
+    // If pending registration exists, delete it to allow re-registration
+    if ((existingPending as any[]).length > 0) {
+      await pool.execute(
+        'DELETE FROM pending_registrations WHERE email = ?',
+        [email]
+      );
+    }
+
     // Hash password
     const hashedPassword = await hashPassword(password);
 
-    // Create user (not verified yet)
-    const userId = generateId();
+    // Generate verification code
+    const verificationCode = generateVerificationCode();
+    const codeExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+
+    // Create pending registration (user will be created only after verification)
+    const registrationId = generateId();
     // Determine role (check if email matches admin email in env)
     const isAdmin = process.env.ADMIN_EMAIL && email.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase();
     const role = isAdmin ? 'admin' : 'customer';
 
     await pool.execute(
-      'INSERT INTO users (id, email, password, name, role, email_verified) VALUES (?, ?, ?, ?, ?, ?)',
-      [userId, email, hashedPassword, name, role, false]
-    );
-
-    // Generate and store verification code
-    const verificationCode = generateVerificationCode();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
-
-    await pool.execute(
-      'INSERT INTO email_verification_codes (user_id, code, expires_at) VALUES (?, ?, ?)',
-      [userId, verificationCode, expiresAt]
+      'INSERT INTO pending_registrations (id, email, password, name, role, verification_code, code_expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [registrationId, email, hashedPassword, name, role, verificationCode, codeExpiresAt]
     );
 
     // Send verification email
@@ -63,7 +72,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return sendSuccess(res, {
       message: 'Registration successful. Please check your email for verification code.',
-      userId,
+      userId: registrationId,
       email,
       requiresVerification: true
     }, 201);
