@@ -15,25 +15,79 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (req.method === 'PUT') {
       const {
         name, slug, description, price, compareAtPrice, category,
-        featured, rating, reviewCount, stock
+        featured, rating, reviewCount, stock, images, tags, variants
       } = req.body;
 
-      const [result] = await pool.execute(
-        `UPDATE products SET name = ?, slug = ?, description = ?, price = ?, 
-                compare_at_price = ?, category = ?, featured = ?, rating = ?,
-                review_count = ?, stock = ?, updated_at = CURRENT_TIMESTAMP
-         WHERE id = ?`,
-        [
-          name, slug, description, price, compareAtPrice || null, category,
-          featured, rating, reviewCount, stock, id
-        ]
-      );
+      const connection = await pool.getConnection();
 
-      if ((result as any).affectedRows === 0) {
-        return sendError(res, 'Product not found', 404);
+      try {
+        await connection.beginTransaction();
+
+        // Update product
+        const [result] = await connection.execute(
+          `UPDATE products SET name = ?, slug = ?, description = ?, price = ?, 
+                  compare_at_price = ?, category = ?, featured = ?, rating = ?,
+                  review_count = ?, stock = ?, updated_at = CURRENT_TIMESTAMP
+           WHERE id = ?`,
+          [
+            name, slug, description, price, compareAtPrice || null, category,
+            featured, rating, reviewCount, stock, id
+          ]
+        );
+
+        if ((result as any).affectedRows === 0) {
+          await connection.rollback();
+          connection.release();
+          return sendError(res, 'Product not found', 404);
+        }
+
+        // Update images - delete old ones and insert new ones
+        if (images && Array.isArray(images)) {
+          await connection.execute('DELETE FROM product_images WHERE product_id = ?', [id]);
+          for (let i = 0; i < images.length; i++) {
+            await connection.execute(
+              'INSERT INTO product_images (product_id, image_url, sort_order) VALUES (?, ?, ?)',
+              [id, images[i], i]
+            );
+          }
+        }
+
+        // Update tags - delete old ones and insert new ones
+        if (tags && Array.isArray(tags)) {
+          await connection.execute('DELETE FROM product_tags WHERE product_id = ?', [id]);
+          for (const tag of tags) {
+            await connection.execute(
+              'INSERT INTO product_tags (product_id, tag) VALUES (?, ?)',
+              [id, tag]
+            );
+          }
+        }
+
+        // Update variants - delete old ones and insert new ones
+        if (variants && Array.isArray(variants)) {
+          await connection.execute('DELETE FROM product_variants WHERE product_id = ?', [id]);
+          for (const variant of variants) {
+            const variantId = variant.id || require('@/lib/utils').generateId();
+            await connection.execute(
+              `INSERT INTO product_variants (id, product_id, name, sku, price, stock, available)
+               VALUES (?, ?, ?, ?, ?, ?, ?)`,
+              [
+                variantId, id, variant.name, variant.sku,
+                variant.price, variant.stock, variant.available
+              ]
+            );
+          }
+        }
+
+        await connection.commit();
+        connection.release();
+
+        return sendSuccess(res, { message: 'Product updated successfully' });
+      } catch (error) {
+        await connection.rollback();
+        connection.release();
+        throw error;
       }
-
-      return sendSuccess(res, { message: 'Product updated successfully' });
     }
 
     // DELETE - Delete product
