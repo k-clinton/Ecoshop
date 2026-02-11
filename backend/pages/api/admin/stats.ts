@@ -34,11 +34,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
        LIMIT 10`
     );
 
-    // Get low stock products
+    // Get low stock products (threshold: 30 units)
     const [lowStockProducts] = await pool.execute(
       `SELECT id, name, slug, stock
        FROM products
-       WHERE stock < 10
+       WHERE stock < 30
        ORDER BY stock ASC
        LIMIT 10`
     );
