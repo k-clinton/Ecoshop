@@ -4,6 +4,7 @@ import { categories } from '@/data/mockData'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/store/ToastContext'
 import { adminService } from '@/services/admin'
+import { getImageUrl } from '@/config/api'
 
 export function AdminInventory() {
   const { addToast } = useToast()
@@ -167,7 +168,7 @@ export function AdminInventory() {
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-lg bg-muted overflow-hidden flex-shrink-0">
-                          <img src={product.images[0]} alt={product.name} className="h-full w-full object-cover" />
+                          <img src={getImageUrl(product.images[0])} alt={product.name} className="h-full w-full object-cover" />
                         </div>
                         <p className="font-medium text-sm">{product.name}</p>
                       </div>

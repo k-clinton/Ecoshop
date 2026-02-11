@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { useToast } from '@/store/ToastContext'
 import { adminService } from '@/services/admin'
 import { useSettings } from '@/store/SettingsContext'
+import { getImageUrl } from '@/config/api'
 
 export function AdminProducts() {
   const { addToast } = useToast()
@@ -319,7 +320,7 @@ export function AdminProducts() {
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         <div className="h-12 w-12 rounded-lg bg-muted overflow-hidden flex-shrink-0">
-                          <img src={product.images[0]} alt={product.name} className="h-full w-full object-cover" />
+                          <img src={getImageUrl(product.images[0])} alt={product.name} className="h-full w-full object-cover" />
                         </div>
                         <div>
                           <p className="font-medium text-sm">{product.name}</p>
@@ -618,7 +619,7 @@ export function AdminProducts() {
                       {formData.images.map((image, index) => (
                         <div key={index} className="relative group">
                           <img
-                            src={image}
+                            src={getImageUrl(image)}
                             alt={`Preview ${index + 1}`}
                             className="h-20 w-20 rounded-lg object-cover border"
                           />

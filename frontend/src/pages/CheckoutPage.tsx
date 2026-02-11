@@ -8,6 +8,7 @@ import { useSettings } from '@/store/SettingsContext'
 import { useAuth } from '@/store/AuthContext'
 import { cn } from '@/lib/utils'
 import { orderService } from '@/services/orders'
+import { getImageUrl } from '@/config/api'
 import { profileService, type Address } from '@/services/profile'
 
 type CheckoutStep = 'information' | 'shipping' | 'payment' | 'confirmation'
@@ -486,7 +487,7 @@ export function CheckoutPage() {
                       <li key={item.variantId} className="flex gap-3">
                         <div className="h-16 w-16 rounded-lg bg-muted overflow-hidden flex-shrink-0">
                           <img
-                            src={product.images[0]}
+                            src={getImageUrl(product.images[0])}
                             alt={product.name}
                             className="h-full w-full object-cover"
                           />

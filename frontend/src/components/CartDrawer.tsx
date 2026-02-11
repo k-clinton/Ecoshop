@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { useCart } from '@/store/CartContext'
 import { useSettings } from '@/store/SettingsContext'
 import { cn } from '@/lib/utils'
+import { getImageUrl } from '@/config/api'
 
 export function CartDrawer() {
   const {
@@ -101,7 +102,7 @@ export function CartDrawer() {
                         className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-muted"
                       >
                         <img
-                          src={product.images[0]}
+                          src={getImageUrl(product.images[0])}
                           alt={product.name}
                           className="h-full w-full object-cover"
                         />

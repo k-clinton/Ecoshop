@@ -54,7 +54,9 @@ export function AdminSettings() {
         try {
             await updateSettings(formData);
             // Show success notification after update completes
-            addToast('Settings saved successfully', 'success')
+            setTimeout(() => {
+                addToast('Settings saved successfully', 'success')
+            }, 100)
         } catch (error: any) {
             console.error('Failed to save settings:', error)
             addToast(error?.message || 'Failed to save settings', 'error')

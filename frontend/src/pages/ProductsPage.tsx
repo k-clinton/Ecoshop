@@ -6,6 +6,7 @@ import { productService } from '@/services/products'
 import { categoryService } from '@/services/categories'
 import { Product, Category } from '@/data/types'
 import { cn } from '@/lib/utils'
+import { useSettings } from '@/store/SettingsContext'
 
 type SortOption = 'featured' | 'newest' | 'price-asc' | 'price-desc' | 'rating'
 
@@ -17,9 +18,25 @@ export function ProductsPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [priceRanges, setPriceRanges] = useState<string[]>([])
+  const { settings } = useSettings()
 
   const selectedCategory = searchParams.get('category')
   const searchQuery = searchParams.get('search') || ''
+  
+  // Get currency symbol for display
+  const getCurrencySymbol = () => {
+    const currency = settings?.currency || 'USD'
+    if (currency === 'KES') return 'KSh.'
+    const symbols: Record<string, string> = {
+      'USD': '$',
+      'EUR': '€',
+      'GBP': '£'
+    }
+    return symbols[currency] || '$'
+  }
+  
+  const currencySymbol = getCurrencySymbol()
+  const exchangeRate = settings?.exchange_rate || 1.0
 
   // Load categories on mount
   useEffect(() => {
@@ -67,19 +84,20 @@ export function ProductsPage() {
   const filteredProducts = useMemo(() => {
     let result = [...products]
 
-    // Filter by price ranges
+    // Filter by price ranges (convert product price to current currency)
     if (priceRanges.length > 0) {
       result = result.filter(product => {
+        const convertedPrice = product.price * exchangeRate
         return priceRanges.some(range => {
           switch (range) {
             case 'under-25':
-              return product.price < 25
+              return convertedPrice < 25
             case '25-50':
-              return product.price >= 25 && product.price < 50
+              return convertedPrice >= 25 && convertedPrice < 50
             case '50-100':
-              return product.price >= 50 && product.price < 100
+              return convertedPrice >= 50 && convertedPrice < 100
             case 'over-100':
-              return product.price >= 100
+              return convertedPrice >= 100
             default:
               return false
           }
@@ -107,7 +125,7 @@ export function ProductsPage() {
     }
 
     return result
-  }, [products, sortBy, priceRanges])
+  }, [products, sortBy, priceRanges, exchangeRate])
 
   const handleCategoryChange = (categorySlug: string | null) => {
     if (categorySlug) {
@@ -191,7 +209,7 @@ export function ProductsPage() {
                       checked={priceRanges.includes('under-25')}
                       onChange={() => handlePriceRangeChange('under-25')}
                     />
-                    <span>Under $25</span>
+                    <span>Under {currencySymbol}25</span>
                   </label>
                   <label className="flex items-center gap-2 text-sm cursor-pointer">
                     <input
@@ -200,7 +218,7 @@ export function ProductsPage() {
                       checked={priceRanges.includes('25-50')}
                       onChange={() => handlePriceRangeChange('25-50')}
                     />
-                    <span>$25 - $50</span>
+                    <span>{currencySymbol}25 - {currencySymbol}50</span>
                   </label>
                   <label className="flex items-center gap-2 text-sm cursor-pointer">
                     <input
@@ -209,7 +227,7 @@ export function ProductsPage() {
                       checked={priceRanges.includes('50-100')}
                       onChange={() => handlePriceRangeChange('50-100')}
                     />
-                    <span>$50 - $100</span>
+                    <span>{currencySymbol}50 - {currencySymbol}100</span>
                   </label>
                   <label className="flex items-center gap-2 text-sm cursor-pointer">
                     <input
@@ -218,7 +236,7 @@ export function ProductsPage() {
                       checked={priceRanges.includes('over-100')}
                       onChange={() => handlePriceRangeChange('over-100')}
                     />
-                    <span>Over $100</span>
+                    <span>Over {currencySymbol}100</span>
                   </label>
                 </div>
               </div>
@@ -260,10 +278,10 @@ export function ProductsPage() {
                     onClick={() => handlePriceRangeChange(range)}
                     className="badge-secondary flex items-center gap-1"
                   >
-                    {range === 'under-25' && 'Under $25'}
-                    {range === '25-50' && '$25 - $50'}
-                    {range === '50-100' && '$50 - $100'}
-                    {range === 'over-100' && 'Over $100'}
+                    {range === 'under-25' && `Under ${currencySymbol}25`}
+                    {range === '25-50' && `${currencySymbol}25 - ${currencySymbol}50`}
+                    {range === '50-100' && `${currencySymbol}50 - ${currencySymbol}100`}
+                    {range === 'over-100' && `Over ${currencySymbol}100`}
                     <X className="h-3 w-3" />
                   </button>
                 ))}
@@ -396,7 +414,7 @@ export function ProductsPage() {
                         checked={priceRanges.includes('under-25')}
                         onChange={() => handlePriceRangeChange('under-25')}
                       />
-                      <span>Under $25</span>
+                      <span>Under {currencySymbol}25</span>
                     </label>
                     <label className="flex items-center gap-2 text-sm cursor-pointer">
                       <input
@@ -405,7 +423,7 @@ export function ProductsPage() {
                         checked={priceRanges.includes('25-50')}
                         onChange={() => handlePriceRangeChange('25-50')}
                       />
-                      <span>$25 - $50</span>
+                      <span>{currencySymbol}25 - {currencySymbol}50</span>
                     </label>
                     <label className="flex items-center gap-2 text-sm cursor-pointer">
                       <input
@@ -414,7 +432,7 @@ export function ProductsPage() {
                         checked={priceRanges.includes('50-100')}
                         onChange={() => handlePriceRangeChange('50-100')}
                       />
-                      <span>$50 - $100</span>
+                      <span>{currencySymbol}50 - {currencySymbol}100</span>
                     </label>
                     <label className="flex items-center gap-2 text-sm cursor-pointer">
                       <input
@@ -423,7 +441,7 @@ export function ProductsPage() {
                         checked={priceRanges.includes('over-100')}
                         onChange={() => handlePriceRangeChange('over-100')}
                       />
-                      <span>Over $100</span>
+                      <span>Over {currencySymbol}100</span>
                     </label>
                   </div>
                 </div>

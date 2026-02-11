@@ -3,6 +3,7 @@ import { Star } from 'lucide-react'
 import { useSettings } from '@/store/SettingsContext'
 import { cn } from '@/lib/utils'
 import { Product } from '@/data/types'
+import { getImageUrl } from '@/config/api'
 
 interface ProductCardProps {
   product: Product
@@ -26,7 +27,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
         {/* Image */}
         <div className="relative aspect-square overflow-hidden bg-muted">
           <img
-            src={product.images[0]}
+            src={getImageUrl(product.images[0])}
             alt={product.name}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />

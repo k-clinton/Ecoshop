@@ -8,6 +8,7 @@ import { useSettings } from '@/store/SettingsContext'
 import { cn } from '@/lib/utils'
 import { ProductCard } from '@/components/ProductCard'
 import { Product, ProductVariant, Category } from '@/data/types'
+import { getImageUrl } from '@/config/api'
 import { productService } from '@/services/products'
 import { categoryService } from '@/services/categories'
 
@@ -149,7 +150,7 @@ export function ProductDetailPage() {
             <div className="space-y-4">
               <div className="aspect-square rounded-2xl overflow-hidden bg-muted">
                 <img
-                  src={product.images[0]}
+                  src={getImageUrl(product.images[0])}
                   alt={product.name}
                   className="h-full w-full object-cover"
                 />
