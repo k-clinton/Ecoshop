@@ -31,13 +31,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
     const loadSettings = async () => {
         try {
-            setLoading(true);
+            if (!settings) setLoading(true);
             const data = await settingsService.getSettings();
             setSettings(data);
         } catch (error) {
             console.error('Failed to load settings:', error);
             // Fallback to defaults if API fails
-            setSettings(defaultSettings);
+            if (!settings) setSettings(defaultSettings);
         } finally {
             setLoading(false);
         }
@@ -65,15 +65,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const formatPrice = (price: number): string => {
         const currency = settings?.currency || 'USD';
         const exchangeRate = settings?.exchange_rate || 1.0;
-        
+
         // Convert price using exchange rate
         const convertedPrice = price * exchangeRate;
-        
+
         // Special handling for KES (Kenyan Shilling)
         if (currency === 'KES') {
             return `KSh. ${convertedPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         }
-        
+
         const formatter = new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: currency,
