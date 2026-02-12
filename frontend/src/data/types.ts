@@ -38,6 +38,8 @@ export interface CartItem {
   variantId: string
   quantity: number
   price: number
+  productName?: string
+  productImage?: string
 }
 
 export interface Cart {

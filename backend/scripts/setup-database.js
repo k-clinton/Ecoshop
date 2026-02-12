@@ -166,6 +166,48 @@ CREATE TABLE IF NOT EXISTS settings (
 
 -- Insert default settings if not exists
 INSERT IGNORE INTO settings (id) VALUES ('default');
+
+-- Product reviews table
+CREATE TABLE IF NOT EXISTS product_reviews (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  product_id VARCHAR(50) NOT NULL,
+  user_id VARCHAR(50) NOT NULL,
+  rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  comment TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_product_id (product_id),
+  INDEX idx_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Wishlists table
+CREATE TABLE IF NOT EXISTS wishlists (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id VARCHAR(50) NOT NULL,
+  product_id VARCHAR(50) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_wishlist (user_id, product_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+  INDEX idx_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Cart items table
+CREATE TABLE IF NOT EXISTS cart_items (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id VARCHAR(50) NOT NULL,
+  product_id VARCHAR(50) NOT NULL,
+  variant_id VARCHAR(50) NOT NULL,
+  quantity INT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_cart_item (user_id, product_id, variant_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+  FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE CASCADE,
+  INDEX idx_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 `;
 
 async function setupDatabase() {

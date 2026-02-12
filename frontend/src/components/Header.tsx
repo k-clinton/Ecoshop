@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ShoppingBag, Search, Menu, Leaf, User, LogOut, Settings } from 'lucide-react'
+import { ShoppingBag, Search, Menu, Leaf, User, LogOut, Settings, Heart } from 'lucide-react'
 import { useCart } from '../store/CartContext'
 import { useAuth } from '../store/AuthContext'
 import { useSettings } from '../store/SettingsContext'
@@ -130,6 +130,15 @@ export function Header({ onMenuOpen }: HeaderProps) {
                 </Link>
               </div>
             )}
+
+            {/* Wishlist */}
+            <Link
+              to="/wishlist"
+              className="btn-ghost p-2 text-muted-foreground hover:text-foreground hidden sm:flex"
+              aria-label="Wishlist"
+            >
+              <Heart className="h-5 w-5" />
+            </Link>
 
             {/* Cart */}
             <button

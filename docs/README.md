@@ -101,18 +101,6 @@ ecoshop/
 - ✅ Product management interface
 - ✅ Order tracking
 
-## 🔐 Default Test Accounts
-
-After seeding the database:
-
-**Admin Account:**
-- Email: `admin@ecoshop.com`
-- Password: `admin123`
-
-**Customer Account:**
-- Email: `customer@ecoshop.com`
-- Password: `customer123`
-
 ## 🛠️ Technology Stack
 
 ### Backend

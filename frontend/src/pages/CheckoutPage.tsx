@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils'
 import { orderService } from '@/services/orders'
 import { getImageUrl } from '@/config/api'
 import { profileService, type Address } from '@/services/profile'
+import { Order } from '@/data/types'
 
 type CheckoutStep = 'information' | 'shipping' | 'payment' | 'confirmation'
 
@@ -21,6 +22,7 @@ export function CheckoutPage() {
   const [step, setStep] = useState<CheckoutStep>('information')
   const [isProcessing, setIsProcessing] = useState(false)
   const [savedAddresses, setSavedAddresses] = useState<Address[]>([])
+  const [order, setOrder] = useState<Order | null>(null)
 
   const [formData, setFormData] = useState({
     email: '',
@@ -48,7 +50,7 @@ export function CheckoutPage() {
         try {
           const addresses = await profileService.getAddresses()
           setSavedAddresses(addresses)
-          
+
           // Auto-fill with user's email if available
           if (user?.email && !formData.email) {
             setFormData(prev => ({ ...prev, email: user.email }))
@@ -69,7 +71,7 @@ export function CheckoutPage() {
     const nameParts = address.name.split(' ')
     const firstName = nameParts[0] || ''
     const lastName = nameParts.slice(1).join(' ') || ''
-    
+
     setFormData(prev => ({
       ...prev,
       firstName,
@@ -80,7 +82,7 @@ export function CheckoutPage() {
       zip: address.zip,
       country: address.country,
     }))
-    
+
     addToast('Address filled successfully', 'success')
   }
 
@@ -92,10 +94,24 @@ export function CheckoutPage() {
     } else if (step === 'shipping') {
       setStep('payment')
     } else if (step === 'payment') {
+      // Basic payment simulation validation
+      if (formData.cardNumber.replace(/\s/g, '').length < 16) {
+        addToast('Invalid card number', 'error')
+        return
+      }
+      if (!formData.expiry.includes('/')) {
+        addToast('Invalid expiry date (MM/YY)', 'error')
+        return
+      }
+      if (formData.cvc.length < 3) {
+        addToast('Invalid CVC', 'error')
+        return
+      }
+
       setIsProcessing(true)
       try {
         // Create order via API
-        await orderService.createOrder({
+        const createdOrder = await orderService.createOrder({
           items,
           subtotal,
           shipping,
@@ -111,6 +127,7 @@ export function CheckoutPage() {
           }
         })
 
+        setOrder(createdOrder)
         setStep('confirmation')
         clearCart()
         addToast('Order placed successfully!', 'success')
@@ -150,7 +167,7 @@ export function CheckoutPage() {
             Order confirmation has been sent to <strong>{formData.email}</strong>
           </p>
           <p className="text-muted-foreground mb-8">
-            Order #ECO-{Math.random().toString(36).substring(2, 8).toUpperCase()}
+            Order #{order?.id.slice(0, 8).toUpperCase() || 'CONFIRMED'}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/products" className="btn-primary btn-md">
@@ -231,7 +248,7 @@ export function CheckoutPage() {
                     </div>
 
                     <h2 className="text-xl font-semibold mt-8 mb-4">Shipping Address</h2>
-                    
+
                     {/* Saved Addresses Section */}
                     {isAuthenticated && savedAddresses.length > 0 && (
                       <div className="mb-6 p-4 bg-muted/50 rounded-lg border border-border">
@@ -273,7 +290,7 @@ export function CheckoutPage() {
                         </p>
                       </div>
                     )}
-                    
+
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium mb-2">First Name</label>

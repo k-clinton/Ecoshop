@@ -1,8 +1,9 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Star, Minus, Plus, Truck, Shield, RefreshCw, ChevronRight, Leaf } from 'lucide-react'
+import { Star, Minus, Plus, Truck, Shield, RefreshCw, ChevronRight, Leaf, Heart } from 'lucide-react'
 import { useCart } from '@/store/CartContext'
+import { useAuth } from '@/store/AuthContext'
 import { useToast } from '@/store/ToastContext'
 import { useSettings } from '@/store/SettingsContext'
 import { cn } from '@/lib/utils'
@@ -11,20 +12,28 @@ import { Product, ProductVariant, Category } from '@/data/types'
 import { getImageUrl } from '@/config/api'
 import { productService } from '@/services/products'
 import { categoryService } from '@/services/categories'
+import { reviewService, type Review } from '@/services/reviews'
+import { wishlistService } from '@/services/wishlist'
 
 
 export function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>()
   const { addItem } = useCart()
+  const { isAuthenticated } = useAuth()
   const { addToast } = useToast()
   const { formatPrice } = useSettings()
 
   const [product, setProduct] = useState<Product | null>(null)
+  const [reviews, setReviews] = useState<Review[]>([])
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | undefined>()
   const [quantity, setQuantity] = useState(1)
   const [category, setCategory] = useState<Category | null>(null)
+  const [activeImage, setActiveImage] = useState(0)
+  const [isWishlisted, setIsWishlisted] = useState(false)
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false)
+  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' })
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -61,6 +70,24 @@ export function ProductDetailPage() {
         } catch (error) {
           console.warn('Failed to load category details:', error)
         }
+
+        // Load reviews
+        try {
+          const productReviews = await reviewService.getReviews(prod.id)
+          setReviews(productReviews)
+        } catch (error) {
+          console.warn('Failed to load reviews:', error)
+        }
+
+        // Check if in wishlist
+        if (isAuthenticated) {
+          try {
+            const wishlist = await wishlistService.getWishlist()
+            setIsWishlisted(wishlist.some(item => item.id === prod.id))
+          } catch (error) {
+            console.warn('Failed to check wishlist:', error)
+          }
+        }
       } catch (error) {
         console.error('Failed to load product:', error)
         setProduct(null)
@@ -70,7 +97,7 @@ export function ProductDetailPage() {
     }
 
     loadProduct()
-  }, [slug])
+  }, [slug, isAuthenticated])
 
   if (loading) {
     return (
@@ -111,6 +138,49 @@ export function ProductDetailPage() {
     }
   }
 
+  const handleToggleWishlist = async () => {
+    if (!isAuthenticated) {
+      addToast('Please sign in to add items to your wishlist', 'info')
+      return
+    }
+
+    if (!product) return
+
+    try {
+      if (isWishlisted) {
+        await wishlistService.removeFromWishlist(product.id)
+        setIsWishlisted(false)
+        addToast('Removed from wishlist', 'success')
+      } else {
+        await wishlistService.addToWishlist(product.id)
+        setIsWishlisted(true)
+        addToast('Added to wishlist', 'success')
+      }
+    } catch (error) {
+      addToast('Failed to update wishlist', 'error')
+    }
+  }
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!isAuthenticated) return
+    if (!product) return
+
+    setIsSubmittingReview(true)
+    try {
+      await reviewService.submitReview(product.id, reviewForm.rating, reviewForm.comment)
+      addToast('Review submitted successfully!', 'success')
+      setReviewForm({ rating: 5, comment: '' })
+      // Refresh reviews
+      const updatedReviews = await reviewService.getReviews(product.id)
+      setReviews(updatedReviews)
+    } catch (error: any) {
+      addToast(error.message || 'Failed to submit review', 'error')
+    } finally {
+      setIsSubmittingReview(false)
+    }
+  }
+
   const hasDiscount = product.compareAtPrice != null && product.compareAtPrice > product.price
 
   return (
@@ -146,15 +216,36 @@ export function ProductDetailPage() {
       <section className="section">
         <div className="container-wide">
           <div className="grid lg:grid-cols-2 gap-12">
-            {/* Product Image */}
+            {/* Product Image Gallery */}
             <div className="space-y-4">
-              <div className="aspect-square rounded-2xl overflow-hidden bg-muted">
+              <div className="aspect-square rounded-2xl overflow-hidden bg-muted group relative">
                 <img
-                  src={getImageUrl(product.images[0])}
+                  src={getImageUrl(product.images[activeImage] || product.images[0])}
                   alt={product.name}
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-cover transition-all duration-500"
                 />
               </div>
+
+              {product.images.length > 1 && (
+                <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
+                  {product.images.map((img, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setActiveImage(index)}
+                      className={cn(
+                        "relative h-20 w-20 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all",
+                        activeImage === index ? "border-primary" : "border-transparent hover:border-primary/50"
+                      )}
+                    >
+                      <img
+                        src={getImageUrl(img)}
+                        alt={`${product.name} ${index + 1}`}
+                        className="h-full w-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Product Info */}
@@ -185,6 +276,17 @@ export function ProductDetailPage() {
                 </div>
                 <span className="text-sm font-medium">{product.rating}</span>
                 <span className="text-sm text-muted-foreground">({product.reviewCount} reviews)</span>
+
+                <button
+                  onClick={handleToggleWishlist}
+                  className={cn(
+                    "ml-auto p-2 rounded-full border transition-all hover:bg-muted",
+                    isWishlisted ? "text-red-500 border-red-100 bg-red-50" : "text-muted-foreground border-border"
+                  )}
+                  aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                >
+                  <Heart className={cn("h-5 w-5", isWishlisted && "fill-current")} />
+                </button>
               </div>
 
               <div className="flex items-baseline gap-3 mb-6">
@@ -294,6 +396,122 @@ export function ProductDetailPage() {
                     </span>
                   ))}
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Reviews Section */}
+      <section className="section bg-muted/30">
+        <div className="container-wide">
+          <div className="grid lg:grid-cols-3 gap-12">
+            <div>
+              <h2 className="text-2xl font-bold mb-6">Customer Reviews</h2>
+              <div className="flex items-center gap-4 mb-8">
+                <div className="text-5xl font-bold">{product.rating}</div>
+                <div>
+                  <div className="flex items-center gap-0.5 mb-1">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={cn(
+                          'h-4 w-4',
+                          i < Math.floor(product.rating)
+                            ? 'fill-amber-400 text-amber-400'
+                            : 'text-muted-foreground/30'
+                        )}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-sm text-muted-foreground">Based on {product.reviewCount || 0} reviews</p>
+                </div>
+              </div>
+
+              {/* Review Form */}
+              {isAuthenticated ? (
+                <div className="bg-card rounded-xl border p-6">
+                  <h3 className="font-semibold mb-4">Write a Review</h3>
+                  <form onSubmit={handleSubmitReview} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Rating</label>
+                      <div className="flex gap-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => setReviewForm(prev => ({ ...prev, rating: star }))}
+                            className="p-1"
+                          >
+                            <Star className={cn(
+                              "h-6 w-6 transition-all",
+                              star <= reviewForm.rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"
+                            )} />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Comment</label>
+                      <textarea
+                        value={reviewForm.comment}
+                        onChange={(e) => setReviewForm(prev => ({ ...prev, comment: e.target.value }))}
+                        className="input min-h-[100px] resize-none"
+                        placeholder="Share your experience..."
+                        required
+                      ></textarea>
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={isSubmittingReview}
+                      className="btn-primary w-full"
+                    >
+                      {isSubmittingReview ? 'Submitting...' : 'Submit Review'}
+                    </button>
+                  </form>
+                </div>
+              ) : (
+                <div className="bg-card rounded-xl border p-6 text-center">
+                  <p className="text-muted-foreground mb-4">Please sign in to leave a review.</p>
+                  <Link to="/signin" className="btn-outline w-full">Sign In</Link>
+                </div>
+              )}
+            </div>
+
+            <div className="lg:col-span-2">
+              <div className="space-y-8">
+                {reviews.length > 0 ? (
+                  reviews.map((review) => (
+                    <div key={review.id} className="pb-8 border-b last:border-0 last:pb-0">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <p className="font-semibold">{review.userName}</p>
+                          <div className="flex items-center gap-0.5 mt-1">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={cn(
+                                  'h-3 w-3',
+                                  i < review.rating
+                                    ? 'fill-amber-400 text-amber-400'
+                                    : 'text-muted-foreground/30'
+                                )}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        <span className="text-sm text-muted-foreground">
+                          {new Date(review.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="text-muted-foreground leading-relaxed italic">"{review.comment}"</p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 bg-card rounded-xl border">
+                    <p className="text-muted-foreground italic">No reviews yet. Be the first to review this product!</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

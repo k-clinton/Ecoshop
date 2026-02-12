@@ -1,6 +1,8 @@
 import { createContext, useContext, useReducer, ReactNode, useState, useEffect } from 'react'
 import { Cart, CartItem, Product, ProductVariant } from '@/data/types'
 import { productService } from '@/services/products'
+import { useAuth } from './AuthContext'
+import { cartService } from '@/services/cart'
 
 interface CartState extends Cart {
   isOpen: boolean
@@ -14,6 +16,7 @@ type CartAction =
   | { type: 'TOGGLE_CART' }
   | { type: 'OPEN_CART' }
   | { type: 'CLOSE_CART' }
+  | { type: 'SET_CART'; payload: CartItem[] }
 
 const initialState: CartState = {
   items: [],
@@ -87,6 +90,11 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     case 'CLOSE_CART':
       return { ...state, isOpen: false }
 
+    case 'SET_CART': {
+      const totals = calculateTotals(action.payload)
+      return { ...state, items: action.payload, ...totals }
+    }
+
     default:
       return state
   }
@@ -106,6 +114,7 @@ interface CartContextType extends CartState {
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { isAuthenticated } = useAuth()
   const [state, dispatch] = useReducer(cartReducer, initialState)
 
   const addItem = (product: Product, variant: ProductVariant, quantity = 1) => {
@@ -152,6 +161,44 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
     loadProducts()
   }, [state.items.length])
+
+  // Load cart from backend when user logs in
+  useEffect(() => {
+    const loadRemoteCart = async () => {
+      if (isAuthenticated) {
+        try {
+          const remoteItems = await cartService.getCart()
+          // Only set if remote has items (or merge logic could be here)
+          if (remoteItems.length > 0) {
+            dispatch({ type: 'SET_CART', payload: remoteItems })
+          }
+        } catch (error) {
+          console.error('Failed to load remote cart:', error)
+        }
+      }
+    }
+    loadRemoteCart()
+  }, [isAuthenticated])
+
+  // Sync cart to backend on change
+  useEffect(() => {
+    const syncRemoteCart = async () => {
+      if (isAuthenticated && state.items.length >= 0) {
+        try {
+          await cartService.syncCart(state.items)
+        } catch (error) {
+          console.error('Failed to sync cart:', error)
+        }
+      }
+    }
+
+    // We could debounce this if needed for performance
+    const timer = setTimeout(() => {
+      syncRemoteCart()
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, [state.items, isAuthenticated])
 
   const getCartItemDetails = (item: CartItem) => {
     const product = productsCache.find(p => p.id === item.productId)

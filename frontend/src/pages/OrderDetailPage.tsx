@@ -6,6 +6,7 @@ import { useAuth } from '@/store/AuthContext'
 import { useToast } from '@/store/ToastContext'
 import { useSettings } from '@/store/SettingsContext'
 import { orderService } from '@/services/orders'
+import { getImageUrl } from '@/config/api'
 import type { Order } from '@/data/types'
 
 export function OrderDetailPage() {
@@ -170,11 +171,19 @@ export function OrderDetailPage() {
                 <div className="space-y-4">
                   {order.items?.map((item, index) => (
                     <div key={index} className="flex items-center gap-4 pb-4 border-b last:border-0 last:pb-0">
-                      <div className="h-16 w-16 rounded-lg bg-muted flex items-center justify-center">
-                        <Package className="h-8 w-8 text-muted-foreground" />
+                      <div className="h-16 w-16 rounded-lg bg-muted overflow-hidden flex items-center justify-center">
+                        {item.productImage ? (
+                          <img
+                            src={getImageUrl(item.productImage)}
+                            alt={item.productName || 'Product'}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <Package className="h-8 w-8 text-muted-foreground" />
+                        )}
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium">Product ID: {item.productId.slice(0, 8)}</p>
+                        <p className="font-medium">{item.productName || `Product ID: ${item.productId.slice(0, 8)}`}</p>
                         <p className="text-sm text-muted-foreground">
                           Variant: {item.variantId.slice(0, 8)} • Qty: {item.quantity}
                         </p>

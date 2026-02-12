@@ -18,6 +18,7 @@ import { SignUpPage } from '@/pages/SignUpPage'
 import VerifyEmailPage from '@/pages/VerifyEmailPage'
 import { AccountPage } from '@/pages/AccountPage'
 import { OrderDetailPage } from '@/pages/OrderDetailPage'
+import { WishlistPage } from '@/pages/WishlistPage'
 import { AboutPage } from '@/pages/AboutPage'
 import { SustainabilityPage } from '@/pages/SustainabilityPage'
 import { ContactPage } from '@/pages/ContactPage'
@@ -62,8 +63,9 @@ function App() {
                 <Route path="/signup" element={<SignUpPage />} />
                 <Route path="/verify-email" element={<StoreLayout><VerifyEmailPage /></StoreLayout>} />
                 <Route path="/account" element={<StoreLayout><AccountPage /></StoreLayout>} />
+                <Route path="/wishlist" element={<StoreLayout><WishlistPage /></StoreLayout>} />
                 <Route path="/orders/:id" element={<StoreLayout><OrderDetailPage /></StoreLayout>} />
-                
+
                 {/* Footer Pages */}
                 <Route path="/about" element={<StoreLayout><AboutPage /></StoreLayout>} />
                 <Route path="/sustainability" element={<StoreLayout><SustainabilityPage /></StoreLayout>} />
