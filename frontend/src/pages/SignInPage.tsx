@@ -11,7 +11,7 @@ export function SignInPage() {
   const [searchParams] = useSearchParams()
   const { signIn, signInWithGoogle } = useAuth()
   const { addToast } = useToast()
-  
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -19,7 +19,7 @@ export function SignInPage() {
   const [error, setError] = useState('')
 
   const from = (location.state as { from?: string })?.from || '/'
-  
+
   useEffect(() => {
     const sessionExpired = searchParams.get('session_expired')
     if (sessionExpired) {
@@ -27,8 +27,14 @@ export function SignInPage() {
       localStorage.removeItem('authToken')
       localStorage.removeItem('lastActivity')
       addToast('Your session has expired. Please sign in again.', 'error')
+
+      // Clear the parameter from URL to prevent toast loop on re-renders
+      const newSearchParams = new URLSearchParams(searchParams)
+      newSearchParams.delete('session_expired')
+      const newSearch = newSearchParams.toString()
+      navigate(`${location.pathname}${newSearch ? '?' + newSearch : ''}`, { replace: true })
     }
-  }, [searchParams, addToast])
+  }, [searchParams, addToast, navigate, location.pathname])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,9 +42,9 @@ export function SignInPage() {
     setIsLoading(true)
 
     const result = await signIn(email, password)
-    
+
     setIsLoading(false)
-    
+
     if (result.success) {
       addToast('Welcome back!', 'success')
       navigate(from, { replace: true })
@@ -46,15 +52,15 @@ export function SignInPage() {
       setError(result.error || 'Sign in failed')
     }
   }
-  
+
   const handleGoogleSuccess = async (credentialResponse: any) => {
     setError('')
     setIsLoading(true)
-    
+
     const result = await signInWithGoogle(credentialResponse.credential)
-    
+
     setIsLoading(false)
-    
+
     if (result.success) {
       addToast('Welcome!', 'success')
       navigate(from, { replace: true })
@@ -62,7 +68,7 @@ export function SignInPage() {
       setError(result.error || 'Google sign in failed')
     }
   }
-  
+
   const handleGoogleError = () => {
     setError('Google sign in failed. Please try again.')
   }

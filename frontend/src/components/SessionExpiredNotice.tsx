@@ -10,7 +10,7 @@ export function SessionExpiredNotice() {
   useEffect(() => {
     // Check URL for session expired parameter
     const params = new URLSearchParams(location.search)
-    if (params.get('session_expired') === 'true') {
+    if (params.get('session_expired') === '1') {
       setShow(true)
       // Remove the query parameter
       params.delete('session_expired')
