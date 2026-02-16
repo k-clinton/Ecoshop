@@ -435,7 +435,32 @@ export function CheckoutPage() {
                 {step === 'payment' && (
                   <div className="space-y-6">
                     <h2 className="text-xl font-semibold mb-4">Payment Details</h2>
-                    <div className="p-4 rounded-lg bg-muted/50 flex items-center gap-3 mb-6">
+                    
+                    {/* Test Mode Notice */}
+                    {import.meta.env.DEV && (
+                      <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900">
+                        <h4 className="font-semibold text-sm mb-2 text-blue-900 dark:text-blue-100">🧪 Test Mode - Use Mock Card Data</h4>
+                        <div className="space-y-2 text-xs text-blue-800 dark:text-blue-200">
+                          <div className="grid grid-cols-[auto,1fr] gap-x-3 gap-y-1">
+                            <span className="font-semibold">Card Number:</span>
+                            <code className="bg-blue-100 dark:bg-blue-900/50 px-2 py-0.5 rounded">4242 4242 4242 4242</code>
+                            <span className="font-semibold">Expiry:</span>
+                            <span>Any future date (e.g., 12/34)</span>
+                            <span className="font-semibold">CVC:</span>
+                            <span>Any 3 digits (e.g., 123)</span>
+                            <span className="font-semibold">ZIP:</span>
+                            <span>Any 5 digits (e.g., 12345)</span>
+                          </div>
+                          <p className="mt-2 pt-2 border-t border-blue-200 dark:border-blue-800">
+                            <strong>Other test cards:</strong><br/>
+                            • <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded">4000 0025 0000 3155</code> - Requires 3D Secure<br/>
+                            • <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded">4000 0000 0000 9995</code> - Declined (insufficient funds)
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="p-4 rounded-lg bg-muted/50 flex items-center gap-3">
                       <Lock className="h-5 w-5 text-primary" />
                       <span className="text-sm">Your payment information is encrypted and secure.</span>
                     </div>
