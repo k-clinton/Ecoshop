@@ -1,9 +1,11 @@
 import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ShoppingBag, Search, Menu, Leaf, User, LogOut, Settings, Heart } from 'lucide-react'
+import { ShoppingBag, Search, Menu, Leaf, User, LogOut, Settings, Heart, Grid3x3, ChevronDown } from 'lucide-react'
 import { useCart } from '../store/CartContext'
 import { useAuth } from '../store/AuthContext'
 import { useSettings } from '../store/SettingsContext'
+import { categoryService } from '../services/categories'
+import { Category } from '../data/types'
 
 interface HeaderProps {
   onMenuOpen?: () => void
@@ -16,6 +18,21 @@ export function Header({ onMenuOpen }: HeaderProps) {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = React.useState('')
   const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false)
+  const [isCategoriesOpen, setIsCategoriesOpen] = React.useState(false)
+  const [categories, setCategories] = React.useState<Category[]>([])
+
+  // Load categories
+  React.useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const cats = await categoryService.getCategories()
+        setCategories(cats)
+      } catch (error) {
+        console.error('Failed to load categories:', error)
+      }
+    }
+    loadCategories()
+  }, [])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -37,13 +54,54 @@ export function Header({ onMenuOpen }: HeaderProps) {
             <Menu className="h-5 w-5" />
           </button>
 
-          {/* Centered content: Logo and Search */}
-          <div className="flex items-center justify-center gap-6 flex-1">
+          {/* Centered content: Logo, Categories, and Search */}
+          <div className="flex items-center justify-center gap-4 lg:gap-6 flex-1">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2 font-display text-xl font-semibold text-foreground mr-8">
+            <Link to="/" className="flex items-center gap-2 font-display text-xl font-semibold text-foreground">
               <Leaf className="h-6 w-6 text-primary" />
-              <span>{settings?.site_name || 'EcoShop'}</span>
+              <span className="hidden sm:inline">{settings?.site_name || 'EcoShop'}</span>
             </Link>
+
+            {/* Categories Dropdown */}
+            <div className="relative hidden lg:block">
+              <button
+                onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
+                className="btn-ghost btn-sm flex items-center gap-1"
+              >
+                <Grid3x3 className="h-4 w-4" />
+                Categories
+                <ChevronDown className="h-4 w-4" />
+              </button>
+
+              {isCategoriesOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setIsCategoriesOpen(false)}
+                  />
+                  <div className="absolute left-0 top-full mt-2 w-64 bg-card rounded-xl border shadow-elevated z-50 py-2 max-h-96 overflow-y-auto">
+                    <Link
+                      to="/products"
+                      onClick={() => setIsCategoriesOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors font-medium"
+                    >
+                      All Products
+                    </Link>
+                    <div className="border-t my-2"></div>
+                    {categories.map((category) => (
+                      <Link
+                        key={category.id}
+                        to={`/products?category=${category.slug}`}
+                        onClick={() => setIsCategoriesOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors"
+                      >
+                        {category.name}
+                      </Link>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
 
             {/* Search Bar */}
             <form onSubmit={handleSearch} className="hidden md:flex items-center relative">
@@ -61,6 +119,48 @@ export function Header({ onMenuOpen }: HeaderProps) {
 
           {/* Actions */}
           <div className="flex items-center gap-2">
+            {/* Mobile Categories Button */}
+            <div className="relative lg:hidden">
+              <button
+                onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
+                className="btn-ghost p-2"
+                aria-label="Categories"
+              >
+                <Grid3x3 className="h-5 w-5" />
+              </button>
+
+              {isCategoriesOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setIsCategoriesOpen(false)}
+                  />
+                  <div className="absolute right-0 top-full mt-2 w-64 bg-card rounded-xl border shadow-elevated z-50 py-2 max-h-96 overflow-y-auto">
+                    <div className="px-4 py-2 border-b mb-2">
+                      <h3 className="font-semibold text-sm">Categories</h3>
+                    </div>
+                    <Link
+                      to="/products"
+                      onClick={() => setIsCategoriesOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors font-medium"
+                    >
+                      All Products
+                    </Link>
+                    <div className="border-t my-2"></div>
+                    {categories.map((category) => (
+                      <Link
+                        key={category.id}
+                        to={`/products?category=${category.slug}`}
+                        onClick={() => setIsCategoriesOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors"
+                      >
+                        {category.name}
+                      </Link>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
 
             {/* User Menu */}
             {isAuthenticated ? (

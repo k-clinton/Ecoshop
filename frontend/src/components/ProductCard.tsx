@@ -32,46 +32,46 @@ export function ProductCard({ product, className }: ProductCardProps) {
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
           {hasDiscount && (
-            <span className="absolute top-3 left-3 badge-accent">
+            <span className="absolute top-2 left-2 badge-accent text-xs px-2 py-0.5">
               -{discountPercent}%
             </span>
           )}
           {product.stock < 10 && product.stock > 0 && (
-            <span className="absolute top-3 right-3 badge bg-foreground/80 text-background">
+            <span className="absolute top-2 right-2 badge bg-foreground/80 text-background text-xs px-2 py-0.5">
               Low stock
             </span>
           )}
         </div>
 
         {/* Content */}
-        <div className="p-4">
-          <div className="flex items-center gap-1 mb-2">
-            <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-            <span className="text-sm font-medium">{product.rating}</span>
-            <span className="text-sm text-muted-foreground">({product.reviewCount})</span>
+        <div className="p-3 sm:p-4">
+          <div className="flex items-center gap-1 mb-1 sm:mb-2">
+            <Star className="h-3 w-3 sm:h-4 sm:w-4 fill-amber-400 text-amber-400" />
+            <span className="text-xs sm:text-sm font-medium">{product.rating}</span>
+            <span className="text-xs sm:text-sm text-muted-foreground">({product.reviewCount})</span>
           </div>
 
-          <h3 className="font-medium text-foreground group-hover:text-primary transition-colors line-clamp-1">
+          <h3 className="font-medium text-sm sm:text-base text-foreground group-hover:text-primary transition-colors line-clamp-2 mb-1">
             {product.name}
           </h3>
 
-          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1 line-clamp-1 sm:line-clamp-2 hidden sm:block">
             {product.description}
           </p>
 
-          <div className="mt-3 flex items-center gap-2">
-            <span className="font-semibold text-foreground">
+          <div className="mt-2 sm:mt-3 flex items-center gap-1.5 sm:gap-2 flex-wrap">
+            <span className="font-semibold text-sm sm:text-base text-foreground">
               {formatPrice(product.price)}
             </span>
             {hasDiscount && (
-              <span className="text-sm text-muted-foreground line-through">
+              <span className="text-xs sm:text-sm text-muted-foreground line-through">
                 {formatPrice(product.compareAtPrice!)}
               </span>
             )}
           </div>
 
           {product.variants.length > 1 && (
-            <p className="text-xs text-muted-foreground mt-2">
+            <p className="text-xs text-muted-foreground mt-1 sm:mt-2 hidden sm:block">
               {product.variants.length} variants available
             </p>
           )}

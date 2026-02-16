@@ -12,6 +12,7 @@ A comprehensive Next.js-based REST API backend for the EcoShop e-commerce platfo
 - ✅ Order processing with inventory management
 - ✅ Category management
 - ✅ Admin dashboard statistics
+- ✅ **Stripe payment integration with webhooks**
 - ✅ CORS enabled for frontend integration
 - ✅ TypeScript for type safety
 
@@ -380,6 +381,46 @@ CORS is configured to allow requests from any origin. For production, update `ne
 }
 ```
 
+## 💳 Stripe Payment Configuration
+
+### Setup Stripe Webhooks
+
+1. **Login to Stripe CLI:**
+   ```bash
+   ./stripe login
+   ```
+
+2. **Get webhook secret:**
+   ```bash
+   ./stripe listen --print-secret
+   ```
+   
+3. **Copy the webhook secret** (starts with `whsec_`) and add it to your `.env` file:
+   ```env
+   STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
+   ```
+
+4. **Start webhook listener** (in a separate terminal):
+   ```bash
+   ./stripe listen --forward-to localhost:3001/api/payments/webhook
+   ```
+
+### Stripe Environment Variables
+
+Add these to your `.env` file:
+```env
+STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
+STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_publishable_key
+STRIPE_WEBHOOK_SECRET=whsec_your_stripe_webhook_secret
+```
+
+### How It Works
+
+- **Payment Intent Creation**: Frontend requests payment intent via `/api/payments/create-intent`
+- **Webhook Processing**: Stripe sends events to `/api/payments/webhook`
+- **Order Status Update**: When payment succeeds, order status automatically updates to "processing"
+- **Secure Verification**: All webhook events are verified using the webhook secret
+
 ## 📝 Environment Variables
 
 | Variable | Description | Default |
@@ -392,6 +433,9 @@ CORS is configured to allow requests from any origin. For production, update `ne
 | `JWT_SECRET` | Secret for JWT signing | (required) |
 | `API_PORT` | API server port | 3001 |
 | `NODE_ENV` | Environment | development |
+| `STRIPE_SECRET_KEY` | Stripe API secret key | (required for payments) |
+| `STRIPE_PUBLISHABLE_KEY` | Stripe publishable key | (required for payments) |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook secret | (required for webhooks) |
 
 ## 🚢 Production Deployment
 

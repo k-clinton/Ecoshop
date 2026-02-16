@@ -150,11 +150,20 @@ export function ProductsPage() {
 
   const currentCategory = categories.find(c => c.slug === selectedCategory)
 
+  // Calculate active filters count
+  const activeFiltersCount = useMemo(() => {
+    let count = 0
+    if (selectedCategory) count++
+    count += priceRanges.length
+    if (inStockOnly) count++
+    return count
+  }, [selectedCategory, priceRanges.length, inStockOnly])
+
   return (
-    <main className="section">
-      <div className="container-wide">
+    <main className="section py-8 md:py-12">
+      <div className="mx-auto max-w-[1600px]">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6 md:mb-8 px-4 sm:px-6 lg:pl-8 lg:pr-8">
           <h1 className="heading-display text-3xl md:text-4xl text-foreground mb-2">
             {currentCategory ? currentCategory.name : 'All Products'}
           </h1>
@@ -163,9 +172,9 @@ export function ProductsPage() {
           </p>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col lg:flex-row lg:gap-8">
           {/* Sidebar Filters - Desktop */}
-          <aside className="hidden lg:block w-64 flex-shrink-0">
+          <aside className="hidden lg:block w-64 flex-shrink-0 pl-8">
             <div className="sticky top-24">
               <FilterSidebar
                 categories={categories}
@@ -187,16 +196,21 @@ export function ProductsPage() {
           </aside>
 
           {/* Main Content */}
-          <div className="flex-1">
+          <div className="flex-1 min-w-0 px-4 sm:px-6 lg:pr-8 lg:pl-0">
             {/* Toolbar */}
             <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-6 border-b">
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setIsFilterOpen(true)}
-                  className="btn-outline btn-sm lg:hidden"
+                  className="btn-outline btn-sm lg:hidden relative"
                 >
                   <Filter className="h-4 w-4" />
                   Filters
+                  {activeFiltersCount > 0 && (
+                    <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium">
+                      {activeFiltersCount}
+                    </span>
+                  )}
                 </button>
                 {selectedCategory && (
                   <button
@@ -243,17 +257,17 @@ export function ProductsPage() {
 
             {/* Product Grid */}
             {loading ? (
-              <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="card animate-pulse">
-                    <div className="aspect-square bg-muted rounded-lg mb-4"></div>
-                    <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
-                    <div className="h-4 bg-muted rounded w-1/2"></div>
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                  <div key={i} className="card animate-pulse p-3 sm:p-4">
+                    <div className="aspect-square bg-muted rounded-lg mb-2 sm:mb-4"></div>
+                    <div className="h-3 sm:h-4 bg-muted rounded w-3/4 mb-2"></div>
+                    <div className="h-3 sm:h-4 bg-muted rounded w-1/2"></div>
                   </div>
                 ))}
               </div>
             ) : filteredProducts.length > 0 ? (
-              <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
                 {filteredProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
@@ -288,17 +302,17 @@ export function ProductsPage() {
               className="fixed inset-0 z-50 bg-foreground/50 backdrop-blur-sm lg:hidden"
               onClick={() => setIsFilterOpen(false)}
             />
-            <div className="fixed left-0 top-0 z-50 h-full w-80 max-w-full bg-background shadow-2xl lg:hidden overflow-y-auto">
-              <div className="flex items-center justify-between p-4 border-b">
-                <h2 className="font-semibold">Filters</h2>
+            <div className="fixed left-0 top-0 z-50 h-full w-full max-w-sm bg-background shadow-2xl lg:hidden overflow-y-auto">
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b sticky top-0 bg-background z-10">
+                <h2 className="font-semibold text-lg">Filters</h2>
                 <button
                   onClick={() => setIsFilterOpen(false)}
-                  className="btn-ghost p-2"
+                  className="btn-ghost p-2 -mr-2"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
-              <div className="p-4">
+              <div className="p-4 sm:p-6 pb-20">
                 <FilterSidebar
                   categories={categories}
                   selectedCategory={selectedCategory}
@@ -319,6 +333,16 @@ export function ProductsPage() {
                     setIsFilterOpen(false)
                   }}
                 />
+              </div>
+              
+              {/* Apply Filters Button - Mobile Only */}
+              <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t shadow-lg lg:hidden">
+                <button
+                  onClick={() => setIsFilterOpen(false)}
+                  className="btn-primary btn-md w-full"
+                >
+                  Apply Filters
+                </button>
               </div>
             </div>
           </>

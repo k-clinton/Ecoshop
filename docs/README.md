@@ -93,9 +93,14 @@ ecoshop/
 ### Frontend Features
 - ✅ Modern React with TypeScript
 - ✅ Responsive design with Tailwind CSS
+- ✅ **Mobile-optimized UI with responsive layouts**
+- ✅ **Categories dropdown in navigation bar**
+- ✅ **Active filter indicators with count badges**
 - ✅ Product browsing and filtering
+- ✅ **2-column mobile product grid for better space utilization**
 - ✅ Shopping cart functionality
 - ✅ User authentication UI
+- ✅ **Stripe payment integration**
 - ✅ Checkout process
 - ✅ Admin dashboard
 - ✅ Product management interface
