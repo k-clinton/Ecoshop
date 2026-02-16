@@ -5,6 +5,11 @@ export interface ProductFilters {
   category?: string;
   featured?: boolean;
   search?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  sort?: string;
+  tags?: string;
+  inStock?: boolean;
   limit?: number;
   offset?: number;
 }
@@ -13,7 +18,7 @@ export const productService = {
   // Get all products with optional filters
   async getProducts(filters: ProductFilters = {}): Promise<Product[]> {
     const params = new URLSearchParams();
-    
+
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined) {
         params.append(key, String(value));

@@ -12,7 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { category, featured, search, limit = '50', offset = '0' } = req.query;
+    const { category, featured, search, minPrice, maxPrice, sort, tags, inStock, limit = '50', offset = '0' } = req.query;
 
     let query = `
       SELECT p.id, p.name, p.slug, p.description, p.price, p.compare_at_price as compareAtPrice,
@@ -37,10 +37,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       params.push(`%${search}%`, `%${search}%`);
     }
 
+    if (minPrice) {
+      query += ' AND p.price >= ?';
+      params.push(parseFloat(minPrice as string));
+    }
+
+    if (maxPrice) {
+      query += ' AND p.price <= ?';
+      params.push(parseFloat(maxPrice as string));
+    }
+
+    if (tags) {
+      const tagList = (tags as string).split(',');
+      query += ` AND p.id IN (SELECT product_id FROM product_tags WHERE tag IN (${tagList.map(() => '?').join(',')}))`;
+      params.push(...tagList);
+    }
+
+    if (inStock === 'true') {
+      query += ' AND p.stock > 0';
+    }
+
+    // Sorting
+    switch (sort) {
+      case 'price-asc':
+        query += ' ORDER BY p.price ASC';
+        break;
+      case 'price-desc':
+        query += ' ORDER BY p.price DESC';
+        break;
+      case 'rating':
+        query += ' ORDER BY p.rating DESC';
+        break;
+      case 'newest':
+      default:
+        query += ' ORDER BY p.created_at DESC';
+    }
+
     const limitNum = parseInt(limit as string);
     const offsetNum = parseInt(offset as string);
-    query += ` ORDER BY p.created_at DESC LIMIT ${limitNum} OFFSET ${offsetNum}`;
-    // Don't push limit/offset to params array since we're using them directly in query
+    query += ` LIMIT ${limitNum} OFFSET ${offsetNum}`;
 
     const [rows] = await pool.execute(query, params);
     const products = rows as any[];

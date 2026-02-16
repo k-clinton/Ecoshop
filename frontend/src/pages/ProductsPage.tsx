@@ -2,10 +2,10 @@ import { useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Filter, SlidersHorizontal, X, ChevronDown } from 'lucide-react'
 import { ProductCard } from '@/components/ProductCard'
+import { FilterSidebar } from '@/components/FilterSidebar'
 import { productService } from '@/services/products'
 import { categoryService } from '@/services/categories'
 import { Product, Category } from '@/data/types'
-import { cn } from '@/lib/utils'
 import { useSettings } from '@/store/SettingsContext'
 
 type SortOption = 'featured' | 'newest' | 'price-asc' | 'price-desc' | 'rating'
@@ -14,6 +14,7 @@ export function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [sortBy, setSortBy] = useState<SortOption>('featured')
+  const [inStockOnly, setInStockOnly] = useState(true)
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
@@ -72,6 +73,45 @@ export function ProductsPage() {
           filters.search = searchQuery
         }
 
+        // Add availability filter
+        if (inStockOnly) {
+          filters.inStock = true
+        }
+
+        // Add sorting
+        filters.sort = sortBy
+
+        // Add price filters
+        if (priceRanges.length > 0) {
+          let min = Infinity
+          let max = -Infinity
+
+          priceRanges.forEach(range => {
+            switch (range) {
+              case 'under-25':
+                min = Math.min(min, 0)
+                max = Math.max(max, thresholds[0])
+                break
+              case '25-50':
+                min = Math.min(min, thresholds[0])
+                max = Math.max(max, thresholds[1])
+                break
+              case '50-100':
+                min = Math.min(min, thresholds[1])
+                max = Math.max(max, thresholds[2])
+                break
+              case 'over-100':
+                min = Math.min(min, thresholds[2])
+                max = Math.max(max, 999999) // Large number for "infinity"
+                break
+            }
+          })
+
+          // Convert back to base currency (USD) for the API
+          if (min !== Infinity) filters.minPrice = min / exchangeRate
+          if (max !== -Infinity && max !== 999999) filters.maxPrice = max / exchangeRate
+        }
+
         const prods = await productService.getProducts(filters)
         setProducts(prods)
       } catch (error) {
@@ -84,53 +124,10 @@ export function ProductsPage() {
     if (categories.length > 0 || !selectedCategory) {
       loadProducts()
     }
-  }, [selectedCategory, searchQuery, categories.length])
+  }, [selectedCategory, searchQuery, categories.length, sortBy, priceRanges, inStockOnly, exchangeRate, thresholds])
 
-  const filteredProducts = useMemo(() => {
-    let result = [...products]
-
-    // Filter by price ranges (convert product price to current currency)
-    if (priceRanges.length > 0) {
-      result = result.filter(product => {
-        const convertedPrice = product.price * exchangeRate
-        return priceRanges.some(range => {
-          switch (range) {
-            case 'under-25':
-              return convertedPrice < thresholds[0]
-            case '25-50':
-              return convertedPrice >= thresholds[0] && convertedPrice < thresholds[1]
-            case '50-100':
-              return convertedPrice >= thresholds[1] && convertedPrice < thresholds[2]
-            case 'over-100':
-              return convertedPrice >= thresholds[2]
-            default:
-              return false
-          }
-        })
-      })
-    }
-
-    // Sort
-    switch (sortBy) {
-      case 'newest':
-        result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        break
-      case 'price-asc':
-        result.sort((a, b) => a.price - b.price)
-        break
-      case 'price-desc':
-        result.sort((a, b) => b.price - a.price)
-        break
-      case 'rating':
-        result.sort((a, b) => b.rating - a.rating)
-        break
-      case 'featured':
-      default:
-        result.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0))
-    }
-
-    return result
-  }, [products, sortBy, priceRanges, exchangeRate])
+  // Use products directly as they are now filtered and sorted by the backend
+  const filteredProducts = products
 
   const handleCategoryChange = (categorySlug: string | null) => {
     if (categorySlug) {
@@ -169,90 +166,23 @@ export function ProductsPage() {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar Filters - Desktop */}
           <aside className="hidden lg:block w-64 flex-shrink-0">
-            <div className="sticky top-24 space-y-6">
-              <div>
-                <h3 className="font-semibold mb-3">Categories</h3>
-                <ul className="space-y-2">
-                  <li>
-                    <button
-                      onClick={() => handleCategoryChange(null)}
-                      className={cn(
-                        'text-sm transition-colors',
-                        !selectedCategory
-                          ? 'text-primary font-medium'
-                          : 'text-muted-foreground hover:text-foreground'
-                      )}
-                    >
-                      All Products
-                    </button>
-                  </li>
-                  {categories.map((category) => (
-                    <li key={category.id}>
-                      <button
-                        onClick={() => handleCategoryChange(category.slug)}
-                        className={cn(
-                          'text-sm transition-colors',
-                          selectedCategory === category.slug
-                            ? 'text-primary font-medium'
-                            : 'text-muted-foreground hover:text-foreground'
-                        )}
-                      >
-                        {category.name}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="border-t pt-6">
-                <h3 className="font-semibold mb-3">Price Range</h3>
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="rounded border-input"
-                      checked={priceRanges.includes('under-25')}
-                      onChange={() => handlePriceRangeChange('under-25')}
-                    />
-                    <span>Under {currencySymbol}{thresholds[0].toLocaleString()}</span>
-                  </label>
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="rounded border-input"
-                      checked={priceRanges.includes('25-50')}
-                      onChange={() => handlePriceRangeChange('25-50')}
-                    />
-                    <span>{currencySymbol}{thresholds[0].toLocaleString()} - {currencySymbol}{thresholds[1].toLocaleString()}</span>
-                  </label>
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="rounded border-input"
-                      checked={priceRanges.includes('50-100')}
-                      onChange={() => handlePriceRangeChange('50-100')}
-                    />
-                    <span>{currencySymbol}{thresholds[1].toLocaleString()} - {currencySymbol}{thresholds[2].toLocaleString()}</span>
-                  </label>
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="rounded border-input"
-                      checked={priceRanges.includes('over-100')}
-                      onChange={() => handlePriceRangeChange('over-100')}
-                    />
-                    <span>Over {currencySymbol}{thresholds[2].toLocaleString()}</span>
-                  </label>
-                </div>
-              </div>
-
-              <div className="border-t pt-6">
-                <h3 className="font-semibold mb-3">Availability</h3>
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input type="checkbox" className="rounded border-input" defaultChecked />
-                  <span>In Stock</span>
-                </label>
-              </div>
+            <div className="sticky top-24">
+              <FilterSidebar
+                categories={categories}
+                selectedCategory={selectedCategory}
+                onCategoryChange={handleCategoryChange}
+                priceRanges={priceRanges}
+                onPriceRangeChange={handlePriceRangeChange}
+                currencySymbol={currencySymbol}
+                thresholds={thresholds}
+                inStockOnly={inStockOnly}
+                onInStockChange={setInStockOnly}
+                onClearFilters={() => {
+                  handleCategoryChange(null)
+                  setPriceRanges([])
+                  setInStockOnly(false)
+                }}
+              />
             </div>
           </aside>
 
@@ -368,88 +298,27 @@ export function ProductsPage() {
                   <X className="h-5 w-5" />
                 </button>
               </div>
-              <div className="p-4 space-y-6">
-                <div>
-                  <h3 className="font-semibold mb-3">Categories</h3>
-                  <ul className="space-y-2">
-                    <li>
-                      <button
-                        onClick={() => {
-                          handleCategoryChange(null)
-                          setIsFilterOpen(false)
-                        }}
-                        className={cn(
-                          'text-sm transition-colors',
-                          !selectedCategory
-                            ? 'text-primary font-medium'
-                            : 'text-muted-foreground'
-                        )}
-                      >
-                        All Products
-                      </button>
-                    </li>
-                    {categories.map((category) => (
-                      <li key={category.id}>
-                        <button
-                          onClick={() => {
-                            handleCategoryChange(category.slug)
-                            setIsFilterOpen(false)
-                          }}
-                          className={cn(
-                            'text-sm transition-colors',
-                            selectedCategory === category.slug
-                              ? 'text-primary font-medium'
-                              : 'text-muted-foreground'
-                          )}
-                        >
-                          {category.name}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="border-t pt-6">
-                  <h3 className="font-semibold mb-3">Price Range</h3>
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-sm cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="rounded border-input"
-                        checked={priceRanges.includes('under-25')}
-                        onChange={() => handlePriceRangeChange('under-25')}
-                      />
-                      <span>Under {currencySymbol}{thresholds[0].toLocaleString()}</span>
-                    </label>
-                    <label className="flex items-center gap-2 text-sm cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="rounded border-input"
-                        checked={priceRanges.includes('25-50')}
-                        onChange={() => handlePriceRangeChange('25-50')}
-                      />
-                      <span>{currencySymbol}{thresholds[0].toLocaleString()} - {currencySymbol}{thresholds[1].toLocaleString()}</span>
-                    </label>
-                    <label className="flex items-center gap-2 text-sm cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="rounded border-input"
-                        checked={priceRanges.includes('50-100')}
-                        onChange={() => handlePriceRangeChange('50-100')}
-                      />
-                      <span>{currencySymbol}{thresholds[1].toLocaleString()} - {currencySymbol}{thresholds[2].toLocaleString()}</span>
-                    </label>
-                    <label className="flex items-center gap-2 text-sm cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="rounded border-input"
-                        checked={priceRanges.includes('over-100')}
-                        onChange={() => handlePriceRangeChange('over-100')}
-                      />
-                      <span>Over {currencySymbol}{thresholds[2].toLocaleString()}</span>
-                    </label>
-                  </div>
-                </div>
+              <div className="p-4">
+                <FilterSidebar
+                  categories={categories}
+                  selectedCategory={selectedCategory}
+                  onCategoryChange={(slug) => {
+                    handleCategoryChange(slug)
+                    setIsFilterOpen(false)
+                  }}
+                  priceRanges={priceRanges}
+                  onPriceRangeChange={handlePriceRangeChange}
+                  currencySymbol={currencySymbol}
+                  thresholds={thresholds}
+                  inStockOnly={inStockOnly}
+                  onInStockChange={setInStockOnly}
+                  onClearFilters={() => {
+                    handleCategoryChange(null)
+                    setPriceRanges([])
+                    setInStockOnly(false)
+                    setIsFilterOpen(false)
+                  }}
+                />
               </div>
             </div>
           </>

@@ -1,6 +1,8 @@
 
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { loadStripe } from '@stripe/stripe-js'
+import { Elements } from '@stripe/react-stripe-js'
 import { Truck, ChevronRight, Lock, CheckCircle, MapPin } from 'lucide-react'
 import { useCart } from '@/store/CartContext'
 import { useToast } from '@/store/ToastContext'
@@ -8,9 +10,13 @@ import { useSettings } from '@/store/SettingsContext'
 import { useAuth } from '@/store/AuthContext'
 import { cn } from '@/lib/utils'
 import { orderService } from '@/services/orders'
+import { paymentService } from '@/services/payments'
 import { getImageUrl } from '@/config/api'
 import { profileService, type Address } from '@/services/profile'
 import { Order } from '@/data/types'
+import { PaymentForm } from '@/components/PaymentForm'
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
 
 type CheckoutStep = 'information' | 'shipping' | 'payment' | 'confirmation'
 
@@ -23,6 +29,7 @@ export function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [savedAddresses, setSavedAddresses] = useState<Address[]>([])
   const [order, setOrder] = useState<Order | null>(null)
+  const [clientSecret, setClientSecret] = useState<string>('')
 
   const [formData, setFormData] = useState({
     email: '',
@@ -34,9 +41,6 @@ export function CheckoutPage() {
     zip: '',
     country: 'USA',
     shippingMethod: 'standard',
-    cardNumber: '',
-    expiry: '',
-    cvc: '',
   })
 
   const shipping = formData.shippingMethod === 'express' ? 12.99 : subtotal >= 50 ? 0 : 5.99
@@ -92,25 +96,9 @@ export function CheckoutPage() {
     if (step === 'information') {
       setStep('shipping')
     } else if (step === 'shipping') {
-      setStep('payment')
-    } else if (step === 'payment') {
-      // Basic payment simulation validation
-      if (formData.cardNumber.replace(/\s/g, '').length < 16) {
-        addToast('Invalid card number', 'error')
-        return
-      }
-      if (!formData.expiry.includes('/')) {
-        addToast('Invalid expiry date (MM/YY)', 'error')
-        return
-      }
-      if (formData.cvc.length < 3) {
-        addToast('Invalid CVC', 'error')
-        return
-      }
-
       setIsProcessing(true)
       try {
-        // Create order via API
+        // Create order first (status: pending)
         const createdOrder = await orderService.createOrder({
           items,
           subtotal,
@@ -126,17 +114,24 @@ export function CheckoutPage() {
             country: formData.country
           }
         })
-
         setOrder(createdOrder)
-        setStep('confirmation')
-        clearCart()
-        addToast('Order placed successfully!', 'success')
+
+        // Create Payment Intent
+        const { clientSecret } = await paymentService.createPaymentIntent(total, createdOrder.id)
+        setClientSecret(clientSecret)
+        setStep('payment')
       } catch (error: any) {
-        addToast(error.message || 'Failed to place order', 'error')
+        addToast(error.message || 'Failed to initialize payment', 'error')
       } finally {
         setIsProcessing(false)
       }
     }
+  }
+
+  const handlePaymentSuccess = () => {
+    setStep('confirmation')
+    clearCart()
+    addToast('Payment successful! Order confirmed.', 'success')
   }
 
   if (items.length === 0 && step !== 'confirmation') {
@@ -363,8 +358,12 @@ export function CheckoutPage() {
                       </div>
                     </div>
 
-                    <button type="submit" className="btn-primary btn-lg w-full mt-6">
-                      Continue to Shipping
+                    <button
+                      type="submit"
+                      disabled={isProcessing}
+                      className="btn-primary btn-lg w-full mt-6"
+                    >
+                      {isProcessing ? 'Processing...' : 'Continue to Shipping'}
                     </button>
                   </div>
                 )}
@@ -421,8 +420,12 @@ export function CheckoutPage() {
                       <button type="button" onClick={() => setStep('information')} className="btn-outline btn-lg flex-1">
                         Back
                       </button>
-                      <button type="submit" className="btn-primary btn-lg flex-1">
-                        Continue to Payment
+                      <button
+                        type="submit"
+                        disabled={isProcessing}
+                        className="btn-primary btn-lg flex-1"
+                      >
+                        {isProcessing ? 'Processing...' : 'Continue to Payment'}
                       </button>
                     </div>
                   </div>
@@ -437,52 +440,38 @@ export function CheckoutPage() {
                       <span className="text-sm">Your payment information is encrypted and secure.</span>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Card Number</label>
-                      <input
-                        type="text"
-                        name="cardNumber"
-                        value={formData.cardNumber}
-                        onChange={handleInputChange}
-                        required
-                        className="input"
-                        placeholder="4242 4242 4242 4242"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium mb-2">Expiry Date</label>
-                        <input
-                          type="text"
-                          name="expiry"
-                          value={formData.expiry}
-                          onChange={handleInputChange}
-                          required
-                          className="input"
-                          placeholder="MM/YY"
+                    {clientSecret && (
+                      <Elements
+                        stripe={stripePromise}
+                        options={{
+                          clientSecret,
+                          appearance: {
+                            theme: 'stripe',
+                            variables: {
+                              colorPrimary: '#000000',
+                            },
+                          },
+                        }}
+                      >
+                        <PaymentForm
+                          onSuccess={handlePaymentSuccess}
+                          total={total}
+                          formatPrice={formatPrice}
                         />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-2">CVC</label>
-                        <input
-                          type="text"
-                          name="cvc"
-                          value={formData.cvc}
-                          onChange={handleInputChange}
-                          required
-                          className="input"
-                          placeholder="123"
-                        />
-                      </div>
-                    </div>
+                      </Elements>
+                    )}
 
-                    <div className="flex gap-4 mt-6">
-                      <button type="button" onClick={() => setStep('shipping')} className="btn-outline btn-lg flex-1">
-                        Back
-                      </button>
-                      <button type="submit" disabled={isProcessing} className="btn-primary btn-lg flex-1">
-                        {isProcessing ? 'Processing...' : `Pay ${formatPrice(total)} `}
-                      </button>
+                    {!clientSecret && (
+                      <div className="py-12 text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                        <p className="text-muted-foreground">Initializing secure payment...</p>
+                      </div>
+                    )}
+
+                    <div className="pt-4 border-t">
+                      <p className="text-xs text-muted-foreground">
+                        By clicking pay, you agree to our terms and conditions. Your order has been registered and items are reserved.
+                      </p>
                     </div>
                   </div>
                 )}
