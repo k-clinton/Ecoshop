@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-do
 import { Leaf, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { useAuth } from '@/store/AuthContext'
 import { useToast } from '@/store/ToastContext'
+import { useSettings } from '@/store/SettingsContext'
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google'
 
 export function SignInPage() {
@@ -11,6 +12,7 @@ export function SignInPage() {
   const [searchParams] = useSearchParams()
   const { signIn, signInWithGoogle } = useAuth()
   const { addToast } = useToast()
+  const { settings } = useSettings()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -79,7 +81,7 @@ export function SignInPage() {
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 font-display text-2xl font-semibold text-foreground mb-2">
             <Leaf className="h-8 w-8 text-primary" />
-            <span>EcoShop</span>
+            <span>{settings?.site_name || 'EcoShop'}</span>
           </Link>
           <h1 className="text-2xl font-semibold text-foreground mt-6">Welcome back</h1>
           <p className="text-muted-foreground mt-2">Sign in to your account to continue</p>
