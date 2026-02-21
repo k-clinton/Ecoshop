@@ -5,7 +5,11 @@ import { sendSuccess, sendError, handleError, generateId } from '@/lib/utils';
 import { handleCors } from '@/lib/cors';
 import { sendVerificationEmail, generateVerificationCode } from '@/lib/email';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+import { validate } from '@/lib/validation';
+import { registerSchema } from '@/lib/schemas';
+import { securityHeaders, rateLimit } from '@/lib/security';
+
+async function registerHandler(req: NextApiRequest, res: NextApiResponse) {
   // Handle CORS preflight
   if (handleCors(req, res)) return;
 
@@ -15,10 +19,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const { email, password, name } = req.body;
-
-    if (!email || !password || !name) {
-      return sendError(res, 'Email, password, and name are required');
-    }
 
     // Check if user already exists in users table
     const [existingUsers] = await pool.execute(
@@ -80,3 +80,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return handleError(res, error);
   }
 }
+export default securityHeaders(rateLimit(3, 60 * 1000)(validate(registerSchema)(registerHandler)));

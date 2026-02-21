@@ -34,6 +34,7 @@ import { AdminOrders } from '@/pages/admin/AdminOrders'
 import { AdminInventory } from '@/pages/admin/AdminInventory'
 import { AdminCustomers } from '@/pages/admin/AdminCustomers'
 import { AdminSettings } from '@/pages/admin/AdminSettings'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 function StoreLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -48,51 +49,53 @@ function StoreLayout({ children }: { children: React.ReactNode }) {
 
 function App() {
   return (
-    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <AuthProvider>
-        <SettingsProvider>
-          <CartProvider>
-            <ToastProvider>
-              <Routes>
-                {/* Store Routes */}
-                <Route path="/" element={<StoreLayout><HomePage /></StoreLayout>} />
-                <Route path="/products" element={<StoreLayout><ProductsPage /></StoreLayout>} />
-                <Route path="/products/:slug" element={<StoreLayout><ProductDetailPage /></StoreLayout>} />
-                <Route path="/checkout" element={<StoreLayout><CheckoutPage /></StoreLayout>} />
-                <Route path="/signin" element={<SignInPage />} />
-                <Route path="/signup" element={<SignUpPage />} />
-                <Route path="/verify-email" element={<StoreLayout><VerifyEmailPage /></StoreLayout>} />
-                <Route path="/account" element={<StoreLayout><AccountPage /></StoreLayout>} />
-                <Route path="/wishlist" element={<StoreLayout><WishlistPage /></StoreLayout>} />
-                <Route path="/orders/:id" element={<StoreLayout><OrderDetailPage /></StoreLayout>} />
+    <ErrorBoundary>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <AuthProvider>
+          <SettingsProvider>
+            <CartProvider>
+              <ToastProvider>
+                <Routes>
+                  {/* Store Routes */}
+                  <Route path="/" element={<StoreLayout><HomePage /></StoreLayout>} />
+                  <Route path="/products" element={<StoreLayout><ProductsPage /></StoreLayout>} />
+                  <Route path="/products/:slug" element={<StoreLayout><ProductDetailPage /></StoreLayout>} />
+                  <Route path="/checkout" element={<StoreLayout><CheckoutPage /></StoreLayout>} />
+                  <Route path="/signin" element={<SignInPage />} />
+                  <Route path="/signup" element={<SignUpPage />} />
+                  <Route path="/verify-email" element={<StoreLayout><VerifyEmailPage /></StoreLayout>} />
+                  <Route path="/account" element={<StoreLayout><AccountPage /></StoreLayout>} />
+                  <Route path="/wishlist" element={<StoreLayout><WishlistPage /></StoreLayout>} />
+                  <Route path="/orders/:id" element={<StoreLayout><OrderDetailPage /></StoreLayout>} />
 
-                {/* Footer Pages */}
-                <Route path="/about" element={<StoreLayout><AboutPage /></StoreLayout>} />
-                <Route path="/sustainability" element={<StoreLayout><SustainabilityPage /></StoreLayout>} />
-                <Route path="/contact" element={<StoreLayout><ContactPage /></StoreLayout>} />
-                <Route path="/blog" element={<StoreLayout><BlogPage /></StoreLayout>} />
-                <Route path="/faq" element={<StoreLayout><FAQPage /></StoreLayout>} />
-                <Route path="/shipping" element={<StoreLayout><ShippingPage /></StoreLayout>} />
-                <Route path="/privacy" element={<StoreLayout><PrivacyPage /></StoreLayout>} />
-                <Route path="/terms" element={<StoreLayout><TermsPage /></StoreLayout>} />
+                  {/* Footer Pages */}
+                  <Route path="/about" element={<StoreLayout><AboutPage /></StoreLayout>} />
+                  <Route path="/sustainability" element={<StoreLayout><SustainabilityPage /></StoreLayout>} />
+                  <Route path="/contact" element={<StoreLayout><ContactPage /></StoreLayout>} />
+                  <Route path="/blog" element={<StoreLayout><BlogPage /></StoreLayout>} />
+                  <Route path="/faq" element={<StoreLayout><FAQPage /></StoreLayout>} />
+                  <Route path="/shipping" element={<StoreLayout><ShippingPage /></StoreLayout>} />
+                  <Route path="/privacy" element={<StoreLayout><PrivacyPage /></StoreLayout>} />
+                  <Route path="/terms" element={<StoreLayout><TermsPage /></StoreLayout>} />
 
-                {/* Admin Routes */}
-                <Route path="/admin" element={<AdminLayout />}>
-                  <Route index element={<AdminDashboard />} />
-                  <Route path="products" element={<AdminProducts />} />
-                  <Route path="orders" element={<AdminOrders />} />
-                  <Route path="inventory" element={<AdminInventory />} />
-                  <Route path="customers" element={<AdminCustomers />} />
-                  <Route path="settings" element={<AdminSettings />} />
-                </Route>
-              </Routes>
-              <ToastContainer />
-              <SessionExpiredNotice />
-            </ToastProvider>
-          </CartProvider>
-        </SettingsProvider>
-      </AuthProvider>
-    </BrowserRouter>
+                  {/* Admin Routes */}
+                  <Route path="/admin" element={<AdminLayout />}>
+                    <Route index element={<AdminDashboard />} />
+                    <Route path="products" element={<AdminProducts />} />
+                    <Route path="orders" element={<AdminOrders />} />
+                    <Route path="inventory" element={<AdminInventory />} />
+                    <Route path="customers" element={<AdminCustomers />} />
+                    <Route path="settings" element={<AdminSettings />} />
+                  </Route>
+                </Routes>
+                <ToastContainer />
+                <SessionExpiredNotice />
+              </ToastProvider>
+            </CartProvider>
+          </SettingsProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   )
 }
 

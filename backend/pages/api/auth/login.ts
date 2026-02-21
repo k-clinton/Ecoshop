@@ -5,7 +5,10 @@ import { sendSuccess, sendError, handleError } from '@/lib/utils';
 import { DBUser } from '@/lib/types';
 import { handleCors } from '@/lib/cors';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+import { validate } from '@/lib/validation';
+import { loginSchema } from '@/lib/schemas';
+
+async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
   // Handle CORS preflight
   if (handleCors(req, res)) return;
 
@@ -15,10 +18,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const { email, password } = req.body;
-
-    if (!email || !password) {
-      return sendError(res, 'Email and password are required');
-    }
 
     // Find user
     const [users] = await pool.execute(
@@ -37,7 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!user.password) {
       return sendError(res, `This account was created with ${user.oauth_provider || 'OAuth'}. Please sign in with ${user.oauth_provider || 'your OAuth provider'}, or contact support to set a password.`, 400);
     }
-    
+
     const isValid = await verifyPassword(password, user.password);
     if (!isValid) {
       return sendError(res, 'Invalid credentials', 401);
@@ -74,3 +73,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return handleError(res, error);
   }
 }
+import { securityHeaders, rateLimit } from '@/lib/security';
+
+export default securityHeaders(
+  rateLimit(5, 60 * 1000)( // 5 requests per minute
+    validate(loginSchema)(loginHandler)
+  )
+);
