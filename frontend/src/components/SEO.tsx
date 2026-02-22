@@ -12,7 +12,7 @@ export function SEO({ title, description, image, article }: SEOProps) {
     const { settings } = useSettings();
 
     const siteName = settings?.site_name || 'EcoShop';
-    const defaultDescription = settings?.site_description || 'Sustainable and eco-friendly products for a better planet.';
+    const defaultDescription = 'Sustainable and eco-friendly products for a better planet.';
 
     const seo = {
         title: title ? `${title} | ${siteName}` : siteName,
