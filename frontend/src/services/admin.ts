@@ -15,6 +15,11 @@ export const adminService = {
     return apiCall<DashboardStats>('/admin/stats');
   },
 
+  // Get advanced sales statistics
+  async getSalesStats(): Promise<any> {
+    return apiCall<any>('/admin/stats/sales');
+  },
+
   // Get all products (admin view)
   async getProducts(): Promise<any[]> {
     return apiCall<any[]>('/admin/products');
@@ -60,5 +65,10 @@ export const adminService = {
       method: 'POST',
       body: formData,
     });
+  },
+
+  // Get activity logs
+  async getActivityLogs(limit: number = 50, offset: number = 0): Promise<any[]> {
+    return apiCall<any[]>(`/admin/activities?limit=${limit}&offset=${offset}`);
   }
 };

@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 import { useToast } from '@/store/ToastContext'
 import { useSettings } from '@/store/SettingsContext'
 import { adminService } from '@/services/admin'
+import { SalesChart, CategoryPieChart } from './SalesChart'
 
 interface DashboardStats {
   totalRevenue: number
@@ -36,19 +37,27 @@ export function AdminDashboard() {
   const { formatPrice } = useSettings()
   const { addToast } = useToast()
   const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [salesData, setSalesData] = useState<any>(null)
+  const [activities, setActivities] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadStats()
+    loadData()
   }, [])
 
-  const loadStats = async () => {
+  const loadData = async () => {
     try {
       setLoading(true)
-      const data = await adminService.getStats()
-      setStats(data)
+      const [statsData, salesStats, logs] = await Promise.all([
+        adminService.getStats(),
+        adminService.getSalesStats(),
+        adminService.getActivityLogs(10)
+      ])
+      setStats(statsData)
+      setSalesData(salesStats)
+      setActivities(logs)
     } catch (error) {
-      console.error('Failed to load dashboard stats:', error)
+      console.error('Failed to load dashboard data:', error)
       addToast('Failed to load dashboard statistics', 'error')
     } finally {
       setLoading(false)
@@ -129,6 +138,30 @@ export function AdminDashboard() {
         ))}
       </div>
 
+      {/* Charts Section */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 card p-6">
+          <h2 className="font-semibold mb-6">Revenue (Last 30 Days)</h2>
+          {salesData?.dailySales ? (
+            <SalesChart data={salesData.dailySales} />
+          ) : (
+            <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+              No sales data available
+            </div>
+          )}
+        </div>
+        <div className="card p-6">
+          <h2 className="font-semibold mb-6">Sales by Category</h2>
+          {salesData?.categorySales ? (
+            <CategoryPieChart data={salesData.categorySales} />
+          ) : (
+            <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+              No category data available
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Recent Orders */}
         <div className="card">
@@ -188,7 +221,7 @@ export function AdminDashboard() {
                 <div key={product.id} className="flex items-center gap-4 p-4">
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm truncate">{product.name}</p>
-                    <Link to={`/ products / ${product.slug} `} className="text-xs text-primary hover:underline">View Product</Link>
+                    <Link to={`/products/${product.slug}`} className="text-xs text-primary hover:underline">View Product</Link>
                   </div>
                   <div className="text-right">
                     <p className={cn(
@@ -203,6 +236,43 @@ export function AdminDashboard() {
             ) : (
               <div className="p-8 text-center text-muted-foreground">
                 No low stock alerts. Good job!
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Recent Activity */}
+        <div className="card lg:col-span-2">
+          <div className="flex items-center justify-between p-6 border-b">
+            <div className="flex items-center gap-2">
+              <Package className="h-5 w-5 text-primary" />
+              <h2 className="font-semibold">Recent Activity</h2>
+            </div>
+          </div>
+          <div className="divide-y">
+            {activities.length > 0 ? (
+              activities.map((activity) => (
+                <div key={activity.id} className="flex items-start gap-4 p-4">
+                  <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">
+                      <span className="text-primary">{activity.userName}</span>{' '}
+                      {activity.action === 'CREATE_PRODUCT' ? 'created product' : activity.action}
+                      {activity.entityId && ` (${activity.entityId})`}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                      <span>{new Date(activity.createdAt).toLocaleString()}</span>
+                      <span>•</span>
+                      <span>IP: {activity.ipAddress}</span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="p-8 text-center text-muted-foreground">
+                No recent activity.
               </div>
             )}
           </div>
