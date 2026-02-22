@@ -1,8 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { handleCors } from '@/lib/cors';
 import pool from '@/lib/db';
-import { requireAdmin } from '@/lib/auth';
+import { requireAdmin, getAuthUser } from '@/lib/auth';
 import { sendSuccess, sendError, handleError, generateId } from '@/lib/utils';
+import { logActivity } from '@/lib/activity';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (handleCors(req, res)) return;
@@ -112,6 +113,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         await connection.commit();
+
+        // Log the activity
+        const adminUser = getAuthUser(req);
+        if (adminUser) {
+          await logActivity(
+            Number(adminUser.userId),
+            'CREATE_PRODUCT',
+            'product',
+            productId,
+            { name, category, price },
+            req.socket.remoteAddress
+          );
+        }
 
         return sendSuccess(res, { id: productId, message: 'Product created successfully' }, 201);
       } catch (error) {
