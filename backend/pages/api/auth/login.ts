@@ -9,9 +9,6 @@ import { validate } from '@/lib/validation';
 import { loginSchema } from '@/lib/schemas';
 
 async function loginHandler(req: NextApiRequest, res: NextApiResponse) {
-  // Handle CORS preflight
-  if (handleCors(req, res)) return;
-
   if (req.method !== 'POST') {
     return sendError(res, 'Method not allowed', 405);
   }
