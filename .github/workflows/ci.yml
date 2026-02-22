@@ -48,16 +48,16 @@ jobs:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_ROOT_PASSWORD: root
+          MYSQL_ROOT_PASSWORD: Kappy@sql!
           MYSQL_DATABASE: ecoshop_db
         ports:
-          - 3306:3306
+          - 3307:3307
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
     env:
       DB_HOST: 127.0.0.1
-      DB_PORT: 3306
+      DB_PORT: 3307
       DB_USER: root
-      DB_PASSWORD: root
+      DB_PASSWORD: Kappy@sql!
       DB_NAME: ecoshop_db
       STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
       JWT_SECRET: ${{ secrets.JWT_SECRET || 'test_jwt_secret_for_e2e' }}
