@@ -5,7 +5,9 @@ import { useCart } from '../store/CartContext'
 import { useAuth } from '../store/AuthContext'
 import { useSettings } from '../store/SettingsContext'
 import { categoryService } from '../services/categories'
+import { searchService, SearchSuggestion } from '../services/search'
 import { Category } from '../data/types'
+import { OptimizedImage } from './OptimizedImage'
 
 interface HeaderProps {
   onMenuOpen?: () => void
@@ -17,6 +19,8 @@ export function Header({ onMenuOpen }: HeaderProps) {
   const { settings } = useSettings()
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = React.useState('')
+  const [suggestions, setSuggestions] = React.useState<SearchSuggestion[]>([])
+  const [showSuggestions, setShowSuggestions] = React.useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false)
   const [isCategoriesOpen, setIsCategoriesOpen] = React.useState(false)
   const [categories, setCategories] = React.useState<Category[]>([])
@@ -34,11 +38,38 @@ export function Header({ onMenuOpen }: HeaderProps) {
     loadCategories()
   }, [])
 
+  // Debounced search suggestions
+  React.useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (searchQuery.trim().length >= 2) {
+        try {
+          const results = await searchService.getSuggestions(searchQuery)
+          setSuggestions(results)
+          setShowSuggestions(true)
+        } catch (error) {
+          console.error('Failed to fetch suggestions:', error)
+        }
+      } else {
+        setSuggestions([])
+        setShowSuggestions(false)
+      }
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) {
       navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`)
+      setShowSuggestions(false)
     }
+  }
+
+  const handleSuggestionClick = (slug: string) => {
+    navigate(`/products/${slug}`)
+    setSearchQuery('')
+    setShowSuggestions(false)
   }
 
   return (
@@ -104,16 +135,48 @@ export function Header({ onMenuOpen }: HeaderProps) {
             </div>
 
             {/* Search Bar */}
-            <form onSubmit={handleSearch} className="hidden md:flex items-center relative">
-              <input
-                type="text"
-                placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch(e)}
-                className="input h-9 w-64 lg:w-80 pl-10"
-              />
-              <Search className="h-4 w-4 text-muted-foreground absolute left-3 pointer-events-none" />
+            <form onSubmit={handleSearch} className="hidden md:flex items-center relative group">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => searchQuery.length >= 2 && setShowSuggestions(true)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch(e)}
+                  className="input h-9 w-64 lg:w-80 pl-10"
+                />
+                <Search className="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+
+                {showSuggestions && suggestions.length > 0 && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setShowSuggestions(false)}
+                    />
+                    <div className="absolute top-full left-0 mt-2 w-full bg-card rounded-xl border shadow-elevated z-50 overflow-hidden divide-y">
+                      {suggestions.map((suggestion) => (
+                        <button
+                          key={suggestion.id}
+                          className="w-full flex items-center gap-3 p-3 hover:bg-muted transition-colors text-left"
+                          onClick={() => handleSuggestionClick(suggestion.slug)}
+                        >
+                          <div className="h-10 w-10 shrink-0 rounded-md overflow-hidden bg-muted border">
+                            <OptimizedImage
+                              src={suggestion.image}
+                              alt={suggestion.name}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{suggestion.name}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
             </form>
           </div>
 
