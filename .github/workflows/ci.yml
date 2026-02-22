@@ -44,6 +44,23 @@ jobs:
   test-e2e:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: ecoshop_db
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: ecoshop_db
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET || 'test_jwt_secret_for_e2e' }}
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node.js
@@ -59,6 +76,12 @@ jobs:
         working-directory: frontend
       - name: Install backend dependencies
         run: npm install
+        working-directory: backend
+      - name: Setup Database
+        run: npm run db:setup
+        working-directory: backend
+      - name: Seed Database
+        run: npm run db:seed
         working-directory: backend
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
