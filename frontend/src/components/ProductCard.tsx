@@ -10,6 +10,8 @@ interface ProductCardProps {
   className?: string
 }
 
+import { OptimizedImage } from './OptimizedImage'
+
 export function ProductCard({ product, className }: ProductCardProps) {
   const { formatPrice } = useSettings()
 
@@ -25,11 +27,11 @@ export function ProductCard({ product, className }: ProductCardProps) {
     >
       <div className="card-hover overflow-hidden">
         {/* Image */}
-        <div className="relative aspect-square overflow-hidden bg-muted">
-          <img
+        <div className="relative aspect-square overflow-hidden">
+          <OptimizedImage
             src={getImageUrl(product.images[0])}
             alt={product.name}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="transition-transform duration-500 group-hover:scale-105"
           />
           {hasDiscount && (
             <span className="absolute top-2 left-2 badge-accent text-xs px-2 py-0.5">
