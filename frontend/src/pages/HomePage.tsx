@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Leaf, Truck, RefreshCw, Shield } from 'lucide-react'
 import { ProductCard } from '@/components/ProductCard'
+import { SEO } from '@/components/SEO'
 import { productService } from '@/services/products'
 import { categoryService } from '@/services/categories'
 import { Product, Category } from '@/data/types'
@@ -42,6 +43,10 @@ export function HomePage() {
 
   return (
     <main>
+      <SEO
+        title="Sustainable & Eco-Friendly Shop"
+        description="Discover thoughtfully curated eco-friendly products that make sustainable living beautiful and effortless."
+      />
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-secondary/50">
         <div className="container-wide py-16 md:py-24 lg:py-32">
