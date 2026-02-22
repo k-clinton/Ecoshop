@@ -2,9 +2,11 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { handleCors } from '@/lib/cors';
 import pool from '@/lib/db';
 import { requireAuth, requireAdmin } from '@/lib/auth';
+import { validate } from '@/lib/validation';
+import { statusUpdateSchema } from '@/lib/schemas';
 import { sendSuccess, sendError, handleError } from '@/lib/utils';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (handleCors(req, res)) return;
 
   const { id } = req.query;
@@ -153,3 +155,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   return sendError(res, 'Method not allowed', 405);
 }
+
+export default (req: NextApiRequest, res: NextApiResponse) => {
+  if (req.method === 'PATCH') {
+    return validate(statusUpdateSchema)(handler)(req, res);
+  }
+  return handler(req, res);
+};

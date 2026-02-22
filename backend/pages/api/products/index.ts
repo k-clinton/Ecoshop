@@ -12,7 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { category, featured, search, minPrice, maxPrice, sort, tags, inStock, limit = '50', offset = '0' } = req.query;
+    const { ids, category, featured, search, minPrice, maxPrice, sort, tags, inStock, limit = '50', offset = '0' } = req.query;
 
     let query = `
       SELECT p.id, p.name, p.slug, p.description, p.price, p.compare_at_price as compareAtPrice,
@@ -22,6 +22,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       WHERE 1=1
     `;
     const params: any[] = [];
+
+    if (ids) {
+      const idList = (ids as string).split(',');
+      query += ` AND p.id IN (${idList.map(() => '?').join(',')})`;
+      params.push(...idList);
+    }
 
     if (category) {
       query += ' AND p.category = ?';

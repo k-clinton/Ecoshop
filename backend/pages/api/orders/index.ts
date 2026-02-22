@@ -2,10 +2,12 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { handleCors } from '@/lib/cors';
 import pool from '@/lib/db';
 import { requireAuth, requireAdmin } from '@/lib/auth';
+import { validate } from '@/lib/validation';
+import { orderSchema } from '@/lib/schemas';
 import { sendSuccess, sendError, handleError, generateId } from '@/lib/utils';
 import { Order, CartItem } from '@/lib/types';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (handleCors(req, res)) return;
 
   // GET - List orders (user's own or all if admin)
@@ -71,6 +73,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (!shippingAddress) {
         return sendError(res, 'Shipping address is required');
+      }
+
+      // SECURITY: Recalculate totals on backend
+      const productIds = items.map(i => i.productId);
+      const [products] = await pool.execute(
+        `SELECT id, price FROM products WHERE id IN (${productIds.map(() => '?').join(',')})`,
+        productIds
+      );
+      const productMap = (products as any[]).reduce((acc, p) => ({ ...acc, [p.id]: p.price }), {});
+
+      let calculatedSubtotal = 0;
+      for (const item of items) {
+        const actualPrice = productMap[item.productId];
+        if (actualPrice === undefined) {
+          return sendError(res, `Product ${item.productId} not found`);
+        }
+        calculatedSubtotal += actualPrice * item.quantity;
+      }
+
+      // Basic mismatch check (tolerance for rounding ideally, but here we expect exact match or we trust backend)
+      if (Math.abs(calculatedSubtotal - subtotal) > 0.01) {
+        return sendError(res, 'Price mismatch detected. Please refresh your cart.', 400);
       }
 
       const orderId = generateId();
@@ -195,3 +219,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   return sendError(res, 'Method not allowed', 405);
 }
+
+export default (req: NextApiRequest, res: NextApiResponse) => {
+  if (req.method === 'POST') {
+    return validate(orderSchema)(handler)(req, res);
+  }
+  return handler(req, res);
+};

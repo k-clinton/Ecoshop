@@ -2,6 +2,7 @@ import apiCall from './api';
 import { Product } from '../data/types';
 
 export interface ProductFilters {
+  ids?: string;
   category?: string;
   featured?: boolean;
   search?: string;

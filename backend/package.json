@@ -12,6 +12,7 @@
     "test": "vitest --run"
   },
   "dependencies": {
+    "@sentry/nextjs": "^10.39.0",
     "@types/micro": "^7.3.7",
     "@types/nodemailer": "^7.0.9",
     "bcryptjs": "^2.4.3",
