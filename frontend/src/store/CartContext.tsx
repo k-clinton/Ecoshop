@@ -3,6 +3,7 @@ import { Cart, CartItem, Product, ProductVariant } from '@/data/types'
 import { productService } from '@/services/products'
 import { useAuth } from './AuthContext'
 import { cartService } from '@/services/cart'
+import { analytics } from '@/lib/analytics'
 
 interface CartState extends Cart {
   isOpen: boolean
@@ -145,6 +146,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = (product: Product, variant: ProductVariant, quantity = 1) => {
     dispatch({ type: 'ADD_ITEM', payload: { product, variant, quantity } })
+    analytics.track('add_to_cart', {
+      productId: product.id,
+      productName: product.name,
+      variantId: variant.id,
+      price: variant.price,
+      quantity
+    })
   }
 
   const removeItem = (variantId: string) => {

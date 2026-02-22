@@ -11,6 +11,7 @@ import { useAuth } from '@/store/AuthContext'
 import { cn } from '@/lib/utils'
 import { orderService } from '@/services/orders'
 import { paymentService } from '@/services/payments'
+import { analytics } from '@/lib/analytics'
 import { getImageUrl } from '@/config/api'
 import { profileService, type Address } from '@/services/profile'
 import { Order } from '@/data/types'
@@ -66,6 +67,16 @@ export function CheckoutPage() {
     }
     loadAddresses()
   }, [isAuthenticated, user])
+
+  // Track initiate checkout
+  useEffect(() => {
+    if (items.length > 0) {
+      analytics.track('initiate_checkout', {
+        itemCount: items.length,
+        totalValue: total
+      })
+    }
+  }, [])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -129,6 +140,11 @@ export function CheckoutPage() {
   }
 
   const handlePaymentSuccess = () => {
+    analytics.track('complete_purchase', {
+      orderId: order?.id,
+      total: total,
+      itemCount: items.length
+    })
     setStep('confirmation')
     clearCart()
     addToast('Payment successful! Order confirmed.', 'success')
@@ -435,7 +451,7 @@ export function CheckoutPage() {
                 {step === 'payment' && (
                   <div className="space-y-6">
                     <h2 className="text-xl font-semibold mb-4">Payment Details</h2>
-                    
+
                     {/* Test Mode Notice */}
                     {import.meta.env.DEV && (
                       <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900">
@@ -452,8 +468,8 @@ export function CheckoutPage() {
                             <span>Any 5 digits (e.g., 12345)</span>
                           </div>
                           <p className="mt-2 pt-2 border-t border-blue-200 dark:border-blue-800">
-                            <strong>Other test cards:</strong><br/>
-                            • <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded">4000 0025 0000 3155</code> - Requires 3D Secure<br/>
+                            <strong>Other test cards:</strong><br />
+                            • <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded">4000 0025 0000 3155</code> - Requires 3D Secure<br />
                             • <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded">4000 0000 0000 9995</code> - Declined (insufficient funds)
                           </p>
                         </div>

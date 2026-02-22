@@ -8,6 +8,7 @@ import { useToast } from '@/store/ToastContext'
 import { useSettings } from '@/store/SettingsContext'
 import { cn } from '@/lib/utils'
 import { ProductCard } from '@/components/ProductCard'
+import { SEO } from '@/components/SEO'
 import { Product, ProductVariant, Category } from '@/data/types'
 import { getImageUrl } from '@/config/api'
 import { productService } from '@/services/products'
@@ -185,6 +186,11 @@ export function ProductDetailPage() {
 
   return (
     <main>
+      <SEO
+        title={product.name}
+        description={product.description}
+        image={getImageUrl(product.images[0])}
+      />
       {/* Breadcrumbs */}
       <div className="border-b">
         <div className="container-wide py-4">
