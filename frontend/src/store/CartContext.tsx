@@ -18,11 +18,28 @@ type CartAction =
   | { type: 'CLOSE_CART' }
   | { type: 'SET_CART'; payload: CartItem[] }
 
+const STORAGE_KEY = 'ecoshop_cart'
+
 const initialState: CartState = {
   items: [],
   subtotal: 0,
   itemCount: 0,
   isOpen: false,
+}
+
+// Helper to load initial state from localStorage
+const getSavedCart = (): CartState => {
+  if (typeof window === 'undefined') return initialState
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved) {
+      const parsed = JSON.parse(saved)
+      return { ...initialState, ...parsed, isOpen: false }
+    }
+  } catch (error) {
+    console.error('Failed to load cart from local storage:', error)
+  }
+  return initialState
 }
 
 function calculateTotals(items: CartItem[]): { subtotal: number; itemCount: number } {
@@ -115,7 +132,16 @@ const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth()
-  const [state, dispatch] = useReducer(cartReducer, initialState)
+  const [state, dispatch] = useReducer(cartReducer, getSavedCart())
+
+  // Save to localStorage whenever items change
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      items: state.items,
+      subtotal: state.subtotal,
+      itemCount: state.itemCount,
+    }))
+  }, [state.items, state.subtotal, state.itemCount])
 
   const addItem = (product: Product, variant: ProductVariant, quantity = 1) => {
     dispatch({ type: 'ADD_ITEM', payload: { product, variant, quantity } })
@@ -152,15 +178,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const loadProducts = async () => {
       if (state.items.length > 0) {
         try {
-          const products = await productService.getProducts()
-          setProductsCache(products)
+          const ids = Array.from(new Set(state.items.map(item => item.productId))).join(',')
+          const products = await productService.getProducts({ ids })
+          setProductsCache(prev => {
+            // Merge with existing cache to avoid losing details if items were removed then re-added
+            const newCache = [...prev]
+            products.forEach(p => {
+              if (!newCache.find(cp => cp.id === p.id)) {
+                newCache.push(p)
+              }
+            })
+            return newCache
+          })
         } catch (error) {
           console.error('Failed to load products for cart:', error)
         }
       }
     }
     loadProducts()
-  }, [state.items.length])
+  }, [state.items])
 
   // Load cart from backend when user logs in
   useEffect(() => {
