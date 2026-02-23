@@ -252,7 +252,7 @@ export function AccountPage() {
                 </div>
 
                 {/* Account Stats */}
-                <div className="grid gap-4 sm:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <div className="bg-card rounded-xl border p-6">
                     <Package className="h-8 w-8 text-primary mb-3" />
                     <p className="text-2xl font-bold">{orders.length}</p>
@@ -266,11 +266,40 @@ export function AccountPage() {
                     <p className="text-sm text-muted-foreground">Total Spent</p>
                   </div>
                   <div className="bg-card rounded-xl border p-6">
-                    <Bell className="h-8 w-8 text-primary mb-3" />
-                    <p className="text-2xl font-bold">
-                      {orders.filter(o => o.status === 'processing' || o.status === 'shipped').length}
-                    </p>
-                    <p className="text-sm text-muted-foreground">Active Orders</p>
+                    <div className="flex items-center gap-2 text-primary mb-3">
+                      <Plus className="h-8 w-8" />
+                      <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-primary/10">POINTS</span>
+                    </div>
+                    <p className="text-2xl font-bold">{user?.loyaltyPoints || 0}</p>
+                    <p className="text-sm text-muted-foreground">Loyalty Points</p>
+                  </div>
+                  <div className="bg-card rounded-xl border p-6">
+                    <Shield className="h-8 w-8 text-primary mb-3" />
+                    <p className="text-xl font-bold">{user?.referralCode || 'N/A'}</p>
+                    <p className="text-sm text-muted-foreground">Referral Code</p>
+                  </div>
+                </div>
+
+                {/* Referral Program Info */}
+                <div className="bg-primary/5 rounded-xl border border-primary/20 p-6">
+                  <h4 className="font-semibold text-lg mb-2">Invite Friends & Earn Points</h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Share your referral code with friends. When they sign up and verify their email,
+                    both you and your friend will receive <span className="font-semibold text-foreground">500 loyalty points</span>!
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-background border rounded-lg px-4 py-2 text-sm font-mono focus-within:ring-2 ring-primary/20 transition-all">
+                      {window.location.origin}/signup?ref={user?.referralCode}
+                    </div>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/signup?ref=${user?.referralCode}`);
+                        addToast('Referral link copied to clipboard!', 'success');
+                      }}
+                      className="btn-secondary whitespace-nowrap"
+                    >
+                      Copy Link
+                    </button>
                   </div>
                 </div>
               </div>

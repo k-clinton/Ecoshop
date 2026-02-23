@@ -4,7 +4,7 @@ import { Leaf, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { useAuth } from '@/store/AuthContext'
 import { useToast } from '@/store/ToastContext'
 import { useSettings } from '@/store/SettingsContext'
-import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google'
+import { GoogleLogin } from '@react-oauth/google'
 
 export function SignInPage() {
   const navigate = useNavigate()
@@ -171,17 +171,15 @@ export function SignInPage() {
 
           {import.meta.env.VITE_GOOGLE_CLIENT_ID && (
             <div className="flex justify-center">
-              <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-                <GoogleLogin
-                  onSuccess={handleGoogleSuccess}
-                  onError={handleGoogleError}
-                  text="signin_with"
-                  shape="rectangular"
-                  theme="outline"
-                  size="large"
-                  width={400}
-                />
-              </GoogleOAuthProvider>
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                text="signin_with"
+                shape="rectangular"
+                theme="outline"
+                size="large"
+                width={400}
+              />
             </div>
           )}
 

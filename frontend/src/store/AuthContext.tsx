@@ -11,7 +11,7 @@ interface AuthState {
 
 interface AuthContextType extends AuthState {
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
-  signUp: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string; userId?: string; email?: string; requiresVerification?: boolean }>
+  signUp: (email: string, password: string, name: string, referralCode?: string) => Promise<{ success: boolean; error?: string; userId?: string; email?: string; requiresVerification?: boolean }>
   verifyEmail: (userId: string, code: string) => Promise<{ success: boolean; error?: string }>
   resendCode: (email: string) => Promise<{ success: boolean; error?: string }>
   signInWithGoogle: (credential: string) => Promise<{ success: boolean; error?: string }>
@@ -101,9 +101,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const signUp = async (email: string, password: string, name: string): Promise<{ success: boolean; error?: string; userId?: string; email?: string; requiresVerification?: boolean }> => {
+  const signUp = async (email: string, password: string, name: string, referralCode?: string): Promise<{ success: boolean; error?: string; userId?: string; email?: string; requiresVerification?: boolean }> => {
     try {
-      const data = await authService.register(email, password, name)
+      const data = await authService.register(email, password, name, referralCode)
       return { success: true, userId: data.userId, email: data.email, requiresVerification: data.requiresVerification }
     } catch (error: any) {
       return { success: false, error: error.message || 'Registration failed' }
@@ -114,7 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Reset session expired flag for fresh login
       resetSessionExpiredFlag()
-      
+
       const response = await authService.verifyEmail(userId, code)
       const { user } = response
       setState({ user, isAuthenticated: true, isLoading: false })

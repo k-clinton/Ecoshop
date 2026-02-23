@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import pool from '@/lib/db';
 import { generateToken } from '@/lib/auth';
-import { sendSuccess, sendError, handleError, generateId } from '@/lib/utils';
+import { sendSuccess, sendError, handleError, generateId, generateReferralCode } from '@/lib/utils';
 import { handleCors } from '@/lib/cors';
 import { DBUser } from '@/lib/types';
 
@@ -27,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     );
 
     const pendingArray = pendingRegs as any[];
-    
+
     if (pendingArray.length > 0) {
       // This is a new registration - create the user
       const pending = pendingArray[0];
@@ -39,10 +39,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Create the actual user account
       const newUserId = generateId();
+      const referralCode = generateReferralCode();
+      const initialPoints = pending.referred_by ? 500 : 0; // Bonus for being referred
+
       await pool.execute(
-        'INSERT INTO users (id, email, password, name, role, email_verified) VALUES (?, ?, ?, ?, ?, ?)',
-        [newUserId, pending.email, pending.password, pending.name, pending.role, true]
+        'INSERT INTO users (id, email, password, name, role, email_verified, referral_code, referred_by, loyalty_points) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [newUserId, pending.email, pending.password, pending.name, pending.role, true, referralCode, pending.referred_by, initialPoints]
       );
+
+      // Award points to referrer if applicable
+      if (pending.referred_by) {
+        await pool.execute(
+          'UPDATE users SET loyalty_points = loyalty_points + ? WHERE id = ?',
+          [500, pending.referred_by]
+        );
+      }
 
       // Delete the pending registration
       await pool.execute(

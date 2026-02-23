@@ -1,18 +1,18 @@
 import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Leaf, Eye, EyeOff, Loader2, Check } from 'lucide-react'
 import { useAuth } from '@/store/AuthContext'
 import { useToast } from '@/store/ToastContext'
 import { useSettings } from '@/store/SettingsContext'
 import { cn } from '@/lib/utils'
-import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google'
+import { GoogleLogin } from '@react-oauth/google'
 
 export function SignUpPage() {
   const navigate = useNavigate()
   const { signUp, signInWithGoogle } = useAuth()
   const { addToast } = useToast()
   const { settings } = useSettings()
-  
+
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -21,6 +21,9 @@ export function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [acceptTerms, setAcceptTerms] = useState(false)
+
+  const [searchParams] = useSearchParams()
+  const referralCode = searchParams.get('ref') || ''
 
   const passwordRequirements = [
     { label: 'At least 8 characters', met: password.length >= 8 },
@@ -52,10 +55,10 @@ export function SignUpPage() {
 
     setIsLoading(true)
 
-    const result = await signUp(email, password, name)
-    
+    const result = await signUp(email, password, name, referralCode)
+
     setIsLoading(false)
-    
+
     if (result.success) {
       if (result.requiresVerification) {
         addToast('Please check your email for verification code', 'success')
@@ -72,11 +75,11 @@ export function SignUpPage() {
   const handleGoogleSuccess = async (credentialResponse: any) => {
     setError('')
     setIsLoading(true)
-    
+
     const result = await signInWithGoogle(credentialResponse.credential)
-    
+
     setIsLoading(false)
-    
+
     if (result.success) {
       addToast('Account created successfully!', 'success')
       navigate('/')
@@ -84,7 +87,7 @@ export function SignUpPage() {
       setError(result.error || 'Google sign up failed')
     }
   }
-  
+
   const handleGoogleError = () => {
     setError('Google sign up failed. Please try again.')
   }
@@ -230,17 +233,15 @@ export function SignUpPage() {
 
           {import.meta.env.VITE_GOOGLE_CLIENT_ID && (
             <div className="flex justify-center">
-              <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-                <GoogleLogin
-                  onSuccess={handleGoogleSuccess}
-                  onError={handleGoogleError}
-                  text="signup_with"
-                  shape="rectangular"
-                  theme="outline"
-                  size="large"
-                  width={400}
-                />
-              </GoogleOAuthProvider>
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                text="signup_with"
+                shape="rectangular"
+                theme="outline"
+                size="large"
+                width={400}
+              />
             </div>
           )}
 

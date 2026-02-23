@@ -18,7 +18,7 @@ async function registerHandler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   try {
-    const { email, password, name } = req.body;
+    const { email, password, name, referralCode } = req.body;
 
     // Check if user already exists in users table
     const [existingUsers] = await pool.execute(
@@ -28,6 +28,18 @@ async function registerHandler(req: NextApiRequest, res: NextApiResponse) {
 
     if ((existingUsers as any[]).length > 0) {
       return sendError(res, 'User already exists', 409);
+    }
+
+    // Check if referral code is valid
+    let referredBy = null;
+    if (referralCode) {
+      const [referrers] = await pool.execute(
+        'SELECT id FROM users WHERE referral_code = ?',
+        [referralCode]
+      );
+      if ((referrers as any[]).length > 0) {
+        referredBy = (referrers as any[])[0].id;
+      }
     }
 
     // Check if pending registration already exists
@@ -58,8 +70,8 @@ async function registerHandler(req: NextApiRequest, res: NextApiResponse) {
     const role = isAdmin ? 'admin' : 'customer';
 
     await pool.execute(
-      'INSERT INTO pending_registrations (id, email, password, name, role, verification_code, code_expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [registrationId, email, hashedPassword, name, role, verificationCode, codeExpiresAt]
+      'INSERT INTO pending_registrations (id, email, password, name, role, verification_code, code_expires_at, referred_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [registrationId, email, hashedPassword, name, role, verificationCode, codeExpiresAt, referredBy]
     );
 
     // Send verification email

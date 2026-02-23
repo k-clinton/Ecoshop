@@ -15,10 +15,10 @@ export interface RegisterResponse {
 
 export const authService = {
   // Register new user
-  async register(email: string, password: string, name: string): Promise<RegisterResponse> {
+  async register(email: string, password: string, name: string, referralCode?: string): Promise<RegisterResponse> {
     const data = await apiCall<RegisterResponse>('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ email, password, name }),
+      body: JSON.stringify({ email, password, name, referralCode }),
     });
 
     return data;
@@ -108,11 +108,11 @@ export const authService = {
   startSessionMonitor() {
     // Stop any existing monitor first to prevent duplicates
     this.stopSessionMonitor();
-    
+
     // Reset the session expired flag when starting fresh session
     this.sessionExpiredFired = false;
     resetSessionExpiredFlag();
-    
+
     this.updateActivity();
 
     // Check activity every minute
@@ -158,13 +158,13 @@ export const authService = {
       clearInterval(this.sessionTimeoutInterval);
       this.sessionTimeoutInterval = null;
     }
-    
+
     // Remove all activity listeners
     this.activityListeners.forEach(({ event, handler }) => {
       document.removeEventListener(event, handler);
     });
     this.activityListeners = [];
-    
+
     // Reset session expired flag
     this.sessionExpiredFired = false;
   },

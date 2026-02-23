@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { OAuth2Client } from 'google-auth-library';
 import pool from '@/lib/db';
 import { generateToken } from '@/lib/auth';
-import { sendSuccess, sendError, handleError, generateId } from '@/lib/utils';
+import { sendSuccess, sendError, handleError, generateId, generateReferralCode } from '@/lib/utils';
 import { handleCors } from '@/lib/cors';
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -29,7 +29,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     const payload = ticket.getPayload();
-    
+
     if (!payload || !payload.email) {
       return sendError(res, 'Invalid Google token', 400);
     }
@@ -47,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (userArray.length > 0) {
       user = userArray[0];
-      
+
       // If user exists but not with OAuth, link the Google account
       if (!user.oauth_provider || !user.oauth_id) {
         // Link the Google account to the existing user account
@@ -55,7 +55,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           'UPDATE users SET oauth_provider = ?, oauth_id = ?, email_verified = 1, last_activity = CURRENT_TIMESTAMP WHERE id = ?',
           ['google', googleId, user.id]
         );
-        
+
         // Update the user object with the new info
         user.oauth_provider = 'google';
         user.oauth_id = googleId;
@@ -69,9 +69,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     } else {
       // Create new user with Google OAuth
       const userId = generateId();
+      const referralCode = generateReferralCode();
       await pool.execute(
-        'INSERT INTO users (id, email, name, role, email_verified, oauth_provider, oauth_id, last_activity) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
-        [userId, email, name || 'User', 'customer', email_verified || true, 'google', googleId]
+        'INSERT INTO users (id, email, name, role, email_verified, oauth_provider, oauth_id, last_activity, referral_code) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)',
+        [userId, email, name || 'User', 'customer', email_verified || true, 'google', googleId, referralCode]
       );
 
       user = {
