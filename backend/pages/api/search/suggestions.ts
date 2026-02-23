@@ -23,9 +23,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const [rows] = await pool.execute(
             `SELECT p.id, p.name, p.slug
        FROM products p
-       WHERE p.name LIKE ? OR p.description LIKE ?
+       WHERE MATCH(p.name, p.description) AGAINST(? IN NATURAL LANGUAGE MODE)
        LIMIT 5`,
-            [searchTerm, searchTerm]
+            [q.trim()]
         );
 
         const suggestions = rows as any[];

@@ -147,6 +147,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           );
         }
 
+        // Award loyalty points (10 points per $1)
+        const pointsToAward = Math.round(total * 10);
+        await connection.execute(
+          'UPDATE users SET loyalty_points = loyalty_points + ? WHERE id = ?',
+          [pointsToAward, authUser.userId]
+        );
+
         await connection.commit();
 
         // Fetch the created order
@@ -171,45 +178,39 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           }
         }
 
+        // Send confirmation email asynchronously (don't block response)
+        try {
+          if (authUser.email) {
+            const [itemDetails] = await pool.execute(
+              `SELECT oi.quantity, oi.price, p.name 
+                   FROM order_items oi
+                   JOIN products p ON oi.product_id = p.id
+                   WHERE oi.order_id = ?`,
+              [orderId]
+            );
+
+            const emailOrder = {
+              subtotal,
+              shipping,
+              tax,
+              total,
+              id: orderId,
+              items: itemDetails
+            };
+
+            const { sendOrderConfirmationEmail } = require('@/lib/email');
+            sendOrderConfirmationEmail(authUser.email, emailOrder, authUser.name || authUser.email).catch((err: any) => console.error('Background email failed:', err));
+          }
+        } catch (e) {
+          console.error('Email trigger error:', e);
+        }
+
         return sendSuccess(res, order, 201);
       } catch (error) {
         await connection.rollback();
         throw error;
       } finally {
         connection.release();
-      }
-
-      // Send confirmation email asynchronously (don't block response)
-      try {
-        // We know authUser.email is in the token payload if available,
-        // but let's verify if we need to fetch it from DB or if it's already in authUser.
-        // authUser from requireAuth returns JWTPayload which has email.
-        if (authUser.email) {
-          // Need to hydrate items with names for the email
-          // We can do a quick lookup or just rely on what we inserted.
-          // But we inserted by ID. We need the product names.
-          // Let's refetch items details for the email or query them up front.
-          // For simplicity/speed, let's fetch the items with names now.
-
-          const [itemDetails] = await pool.execute(
-            `SELECT oi.quantity, oi.price, p.name 
-                 FROM order_items oi
-                 JOIN products p ON oi.product_id = p.id
-                 WHERE oi.order_id = ?`,
-            [orderId]
-          );
-
-          const emailOrder = {
-            ...req.body, // contains subtotal, shipping, tax, total
-            id: orderId,
-            items: itemDetails
-          };
-
-          const { sendOrderConfirmationEmail } = require('@/lib/email');
-          sendOrderConfirmationEmail(authUser.email, emailOrder, authUser.userId /* using ID as name fallback or extract name from somewhere if possible */).catch((err: any) => console.error('Background email failed:', err));
-        }
-      } catch (e) {
-        console.error('Email trigger error:', e);
       }
 
     } catch (error) {

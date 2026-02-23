@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Get user details
     const [users] = await pool.execute(
-      'SELECT id, email, name, role FROM users WHERE id = ?',
+      'SELECT id, email, name, role, loyalty_points as loyaltyPoints, referral_code as referralCode FROM users WHERE id = ?',
       [authUser.userId]
     );
 

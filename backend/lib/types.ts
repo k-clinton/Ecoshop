@@ -74,6 +74,8 @@ export interface User {
   email: string;
   name: string;
   role: 'customer' | 'admin';
+  loyaltyPoints?: number;
+  referralCode?: string;
 }
 
 export interface DBUser extends User {

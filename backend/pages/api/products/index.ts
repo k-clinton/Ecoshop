@@ -13,15 +13,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const { ids, category, featured, search, minPrice, maxPrice, sort, tags, inStock, limit = '50', offset = '0' } = req.query;
-
-    let query = `
-      SELECT p.id, p.name, p.slug, p.description, p.price, p.compare_at_price as compareAtPrice,
-             p.category, p.featured, p.rating, p.review_count as reviewCount, p.stock,
-             p.created_at as createdAt
-      FROM products p
-      WHERE 1=1
-    `;
+    let query = '';
     const params: any[] = [];
+
+    if (search) {
+      query = `
+        SELECT p.id, p.name, p.slug, p.description, p.price, p.compare_at_price as compareAtPrice,
+               p.category, p.featured, p.rating, p.review_count as reviewCount, p.stock,
+               p.created_at as createdAt,
+               MATCH(p.name, p.description) AGAINST(?) as relevance
+        FROM products p
+        WHERE 1=1
+        AND MATCH(p.name, p.description) AGAINST(? IN NATURAL LANGUAGE MODE)
+      `;
+      params.push(search, search);
+    } else {
+      query = `
+        SELECT p.id, p.name, p.slug, p.description, p.price, p.compare_at_price as compareAtPrice,
+               p.category, p.featured, p.rating, p.review_count as reviewCount, p.stock,
+               p.created_at as createdAt
+        FROM products p
+        WHERE 1=1
+      `;
+    }
 
     if (ids) {
       const idList = (ids as string).split(',');
@@ -36,11 +50,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (featured === 'true') {
       query += ' AND p.featured = TRUE';
-    }
-
-    if (search) {
-      query += ' AND (p.name LIKE ? OR p.description LIKE ?)';
-      params.push(`%${search}%`, `%${search}%`);
     }
 
     if (minPrice) {
@@ -64,46 +73,51 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Sorting
-    switch (sort) {
-      case 'price-asc':
-        query += ' ORDER BY p.price ASC';
-        break;
-      case 'price-desc':
-        query += ' ORDER BY p.price DESC';
-        break;
-      case 'rating':
-        query += ' ORDER BY p.rating DESC';
-        break;
-      case 'newest':
-      default:
-        query += ' ORDER BY p.created_at DESC';
+    if (search && !sort) {
+      query += ' ORDER BY relevance DESC';
+    } else {
+      switch (sort) {
+        case 'price-asc':
+          query += ' ORDER BY p.price ASC';
+          break;
+        case 'price-desc':
+          query += ' ORDER BY p.price DESC';
+          break;
+        case 'rating':
+          query += ' ORDER BY p.rating DESC';
+          break;
+        case 'newest':
+        default:
+          query += ' ORDER BY p.created_at DESC';
+      }
     }
 
     const limitNum = parseInt(limit as string);
     const offsetNum = parseInt(offset as string);
-    query += ` LIMIT ${limitNum} OFFSET ${offsetNum}`;
+    query += ` LIMIT ? OFFSET ?`;
+    params.push(limitNum, offsetNum);
 
-    const [rows] = await pool.execute(query, params);
+    const [rows] = await pool.query(query, params);
     const products = rows as any[];
 
     // Fetch related data for each product
     for (const product of products) {
       // Get images
-      const [images] = await pool.execute(
+      const [images] = await pool.query(
         'SELECT image_url FROM product_images WHERE product_id = ? ORDER BY sort_order',
         [product.id]
       );
       product.images = (images as any[]).map(img => img.image_url);
 
       // Get tags
-      const [tags] = await pool.execute(
+      const [tags] = await pool.query(
         'SELECT tag FROM product_tags WHERE product_id = ?',
         [product.id]
       );
       product.tags = (tags as any[]).map(tag => tag.tag);
 
       // Get variants
-      const [variants] = await pool.execute(
+      const [variants] = await pool.query(
         'SELECT id, name, sku, price, stock, available FROM product_variants WHERE product_id = ?',
         [product.id]
       );

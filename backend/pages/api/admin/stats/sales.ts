@@ -30,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         SUM(oi.price * oi.quantity) as revenue
        FROM order_items oi
        JOIN products p ON oi.product_id = p.id
-       JOIN categories c ON p.category_id = c.id
+       JOIN categories c ON p.category = c.id
        JOIN orders o ON oi.order_id = o.id
        WHERE o.status != "cancelled"
        GROUP BY c.id
