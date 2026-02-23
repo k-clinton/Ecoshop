@@ -61,6 +61,9 @@ async function apiCall<T>(
       throw new ApiError('Session expired', 401);
     }
 
+    // Parse JSON response
+    const result = await response.json() as ApiResponse<T>;
+
     if (!result.success) {
       let errorMsg = result.error || 'API request failed';
       if ((result as any).issues && Array.isArray((result as any).issues)) {
