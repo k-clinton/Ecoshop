@@ -85,6 +85,6 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Run Playwright tests
         env:
-          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET || 'test_jwt_secret_for_e2e' }}
+          STRIPE_SECRET_KEY: 'sk_test_123_dummy_key_for_e2e'
+          JWT_SECRET: 'test_jwt_secret_for_e2e'
         run: npm run test:e2e
