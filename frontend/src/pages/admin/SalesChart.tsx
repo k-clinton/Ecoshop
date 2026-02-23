@@ -1,13 +1,9 @@
 import {
-    BarChart,
-    Bar,
     XAxis,
     YAxis,
     CartesianGrid,
     Tooltip,
     ResponsiveContainer,
-    LineChart,
-    Line,
     Legend,
     Cell,
     PieChart,
@@ -93,7 +89,7 @@ export function CategoryPieChart({ data }: { data: any[] }) {
                         dataKey="revenue"
                         nameKey="category"
                     >
-                        {data.map((entry, index) => (
+                        {data.map((_entry, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                     </Pie>

@@ -199,7 +199,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             };
 
             const { sendOrderConfirmationEmail } = require('@/lib/email');
-            sendOrderConfirmationEmail(authUser.email, emailOrder, authUser.name || authUser.email).catch((err: any) => console.error('Background email failed:', err));
+            sendOrderConfirmationEmail(authUser.email, emailOrder, authUser.email).catch((err: any) => console.error('Background email failed:', err));
           }
         } catch (e) {
           console.error('Email trigger error:', e);
