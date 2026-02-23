@@ -61,10 +61,12 @@ async function apiCall<T>(
       throw new ApiError('Session expired', 401);
     }
 
-    const result: ApiResponse<T> = await response.json();
-
     if (!result.success) {
-      throw new ApiError(result.error || 'API request failed', response.status);
+      let errorMsg = result.error || 'API request failed';
+      if ((result as any).issues && Array.isArray((result as any).issues)) {
+        errorMsg += ': ' + (result as any).issues.map((i: any) => `${i.path}: ${i.message}`).join(', ');
+      }
+      throw new ApiError(errorMsg, response.status);
     }
 
     return result.data as T;

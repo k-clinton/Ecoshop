@@ -24,6 +24,7 @@ export function validate(schema: z.ZodSchema) {
                         path: issue.path.join('.'),
                         message: issue.message
                     }));
+                    console.error('Validation Error for', req.url, ':', issues);
                     return res.status(400).json({
                         success: false,
                         error: 'Validation failed',
