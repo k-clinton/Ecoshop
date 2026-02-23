@@ -18,6 +18,8 @@ export function validate(schema: z.ZodSchema) {
                 return handler(req, res);
             } catch (error) {
                 if (error instanceof z.ZodError) {
+                    const { setCorsHeaders } = require('./cors');
+                    setCorsHeaders(req, res);
                     const issues = error.issues.map(issue => ({
                         path: issue.path.join('.'),
                         message: issue.message

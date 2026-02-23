@@ -37,8 +37,8 @@ export const orderSchema = z.object({
         z.string().min(1),
         z.object({
             name: z.string().min(1),
-            email: z.string().email(),
-            address: z.string().min(1),
+            email: z.string().email().optional(),
+            street: z.string().min(1),
             city: z.string().min(1),
             state: z.string().min(1),
             zip: z.string().min(1),
