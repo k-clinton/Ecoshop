@@ -115,7 +115,7 @@ export function CheckoutPage() {
 
           // Auto-fill with user's email if available
           if (user?.email && !formData.email) {
-            setFormData(prev => ({ ...prev, email: user.email }))
+            setFormData((prev: typeof formData) => ({ ...prev, email: user.email }))
           }
         } catch (error) {
           console.error('Failed to load addresses:', error)
@@ -154,7 +154,7 @@ export function CheckoutPage() {
     const firstName = nameParts[0] || ''
     const lastName = nameParts.slice(1).join(' ') || ''
 
-    setFormData(prev => ({
+    setFormData((prev: typeof formData) => ({
       ...prev,
       firstName,
       lastName,
