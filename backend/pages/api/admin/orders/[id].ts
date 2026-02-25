@@ -65,8 +65,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 item.productImage = (images as any[])[0]?.image_url || '';
             }
 
-            order.items = items;
-            order.itemCount = (items as any[]).reduce((sum, item) => sum + item.quantity, 0);
+            order.items = (items as any[]).map(item => ({
+                ...item,
+                quantity: parseInt(item.quantity),
+                price: parseFloat(item.price)
+            }));
+            order.itemCount = order.items.reduce((sum: number, item: any) => sum + item.quantity, 0);
 
             // Safe JSON parsing for shippingAddress
             if (order.shippingAddress && typeof order.shippingAddress === 'string') {
@@ -148,8 +152,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 item.productImage = (images as any[])[0]?.image_url || '';
             }
 
-            order.items = items;
-            order.itemCount = (items as any[]).reduce((sum, item) => sum + item.quantity, 0);
+            order.items = (items as any[]).map(item => ({
+                ...item,
+                quantity: parseInt(item.quantity),
+                price: parseFloat(item.price)
+            }));
+            order.itemCount = order.items.reduce((sum: number, item: any) => sum + item.quantity, 0);
 
             // Safe JSON parsing for shippingAddress
             if (order.shippingAddress && typeof order.shippingAddress === 'string') {

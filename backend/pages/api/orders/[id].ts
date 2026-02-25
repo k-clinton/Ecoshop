@@ -45,7 +45,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         [id]
       );
 
-      order.items = items;
+      order.items = (items as any[]).map(item => ({
+        ...item,
+        quantity: parseInt(item.quantity),
+        price: parseFloat(item.price)
+      }));
 
       // Safe JSON parsing for shippingAddress
       if (order.shippingAddress && typeof order.shippingAddress === 'string') {
@@ -121,7 +125,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         [id]
       );
 
-      order.items = items;
+      order.items = (items as any[]).map(item => ({
+        ...item,
+        quantity: parseInt(item.quantity),
+        price: parseFloat(item.price)
+      }));
 
       // Safe JSON parsing for shippingAddress
       if (order.shippingAddress && typeof order.shippingAddress === 'string') {

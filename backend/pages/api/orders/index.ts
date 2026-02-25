@@ -42,7 +42,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
            WHERE order_id = ?`,
           [order.id]
         );
-        order.items = items;
+        order.items = (items as any[]).map(item => ({
+          ...item,
+          quantity: parseInt(item.quantity),
+          price: parseFloat(item.price)
+        }));
 
         // Parse shippingAddress if it's a string
         if (typeof order.shippingAddress === 'string') {

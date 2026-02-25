@@ -33,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 productId: row.productId,
                 variantId: row.variantId,
                 quantity: row.quantity,
-                price: row.variantPrice || row.price,
+                price: parseFloat(row.variantPrice || row.price),
                 productName: row.productName,
                 productImage: row.productImage
             }));
