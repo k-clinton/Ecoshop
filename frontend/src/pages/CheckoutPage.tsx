@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements } from '@stripe/react-stripe-js'
 import { Truck, ChevronRight, Lock, CheckCircle, MapPin } from 'lucide-react'
@@ -22,31 +22,88 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
 type CheckoutStep = 'information' | 'shipping' | 'payment' | 'confirmation'
 
 export function CheckoutPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const { items, subtotal, clearCart, getCartItemDetails } = useCart()
   const { addToast } = useToast()
   const { formatPrice } = useSettings()
   const { isAuthenticated, user } = useAuth()
-  const [step, setStep] = useState<CheckoutStep>('information')
+  const [step, setStep] = useState<CheckoutStep>(() => {
+    // Check if we have a recent confirmed order in sessionStorage
+    const recentConfirmation = sessionStorage.getItem('checkout_confirmed')
+    if (recentConfirmation) {
+      const data = JSON.parse(recentConfirmation)
+      // Only show confirmation if within 5 minutes
+      if (Date.now() - data.timestamp < 5 * 60 * 1000) {
+        return 'confirmation'
+      } else {
+        sessionStorage.removeItem('checkout_confirmed')
+      }
+    }
+    return 'information'
+  })
   const [isProcessing, setIsProcessing] = useState(false)
   const [savedAddresses, setSavedAddresses] = useState<Address[]>([])
-  const [order, setOrder] = useState<Order | null>(null)
+  const [order, setOrder] = useState<Order | null>(() => {
+    // Restore order data if showing confirmation
+    const recentConfirmation = sessionStorage.getItem('checkout_confirmed')
+    if (recentConfirmation) {
+      const data = JSON.parse(recentConfirmation)
+      if (Date.now() - data.timestamp < 5 * 60 * 1000) {
+        return data.order || null
+      }
+    }
+    return null
+  })
   const [clientSecret, setClientSecret] = useState<string>('')
 
-  const [formData, setFormData] = useState({
-    email: '',
-    firstName: '',
-    lastName: '',
-    address: '',
-    city: '',
-    state: '',
-    zip: '',
-    country: 'USA',
-    shippingMethod: 'standard',
+  const [formData, setFormData] = useState(() => {
+    // Restore form data if showing confirmation
+    const recentConfirmation = sessionStorage.getItem('checkout_confirmed')
+    if (recentConfirmation) {
+      const data = JSON.parse(recentConfirmation)
+      if (Date.now() - data.timestamp < 5 * 60 * 1000 && data.formData) {
+        return data.formData
+      }
+    }
+    return {
+      email: '',
+      firstName: '',
+      lastName: '',
+      address: '',
+      city: '',
+      state: '',
+      zip: '',
+      country: 'USA',
+      shippingMethod: 'standard',
+    }
   })
 
   const shipping = formData.shippingMethod === 'express' ? 12.99 : subtotal >= 50 ? 0 : 5.99
   const tax = subtotal * 0.08
   const total = subtotal + shipping + tax
+
+  // Handle payment success redirect from Stripe
+  useEffect(() => {
+    const paymentSuccess = searchParams.get('payment_success')
+    const paymentIntent = searchParams.get('payment_intent')
+    
+    if (paymentSuccess === 'true' && paymentIntent) {
+      // Payment was successful via redirect - show confirmation
+      // Save confirmation state to sessionStorage
+      sessionStorage.setItem('checkout_confirmed', JSON.stringify({
+        timestamp: Date.now(),
+        order: order,
+        formData: formData
+      }))
+      
+      setStep('confirmation')
+      clearCart()
+      addToast('Payment successful! Order confirmed.', 'success')
+      
+      // Clean up URL
+      setSearchParams({})
+    }
+  }, [searchParams, setSearchParams, clearCart, addToast, order, formData])
 
   // Load saved addresses when user is authenticated
   useEffect(() => {
@@ -70,13 +127,23 @@ export function CheckoutPage() {
 
   // Track initiate checkout
   useEffect(() => {
-    if (items.length > 0) {
+    if (items.length > 0 && step === 'information') {
       analytics.track('initiate_checkout', {
         itemCount: items.length,
         totalValue: total
       })
     }
   }, [])
+
+  // Cleanup confirmation state when user navigates away from confirmation
+  useEffect(() => {
+    return () => {
+      // Clear confirmation on unmount only if not on confirmation step
+      if (step !== 'confirmation') {
+        sessionStorage.removeItem('checkout_confirmed')
+      }
+    }
+  }, [step])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -139,14 +206,22 @@ export function CheckoutPage() {
     }
   }
 
-  const handlePaymentSuccess = () => {
+  const handlePaymentSuccess = async () => {
     analytics.track('complete_purchase', {
       orderId: order?.id,
       total: total,
       itemCount: items.length
     })
+    
+    // Save confirmation state to sessionStorage
+    sessionStorage.setItem('checkout_confirmed', JSON.stringify({
+      timestamp: Date.now(),
+      order: order,
+      formData: formData
+    }))
+    
     setStep('confirmation')
-    clearCart()
+    await clearCart()
     addToast('Payment successful! Order confirmed.', 'success')
   }
 

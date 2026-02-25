@@ -122,7 +122,7 @@ interface CartContextType extends CartState {
   addItem: (product: Product, variant: ProductVariant, quantity?: number) => void
   removeItem: (variantId: string) => void
   updateQuantity: (variantId: string, quantity: number) => void
-  clearCart: () => void
+  clearCart: () => Promise<void>
   toggleCart: () => void
   openCart: () => void
   closeCart: () => void
@@ -163,8 +163,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'UPDATE_QUANTITY', payload: { variantId, quantity } })
   }
 
-  const clearCart = () => {
+  const clearCart = async () => {
     dispatch({ type: 'CLEAR_CART' })
+    // Immediately sync to backend if authenticated
+    if (isAuthenticated) {
+      try {
+        await cartService.syncCart([])
+      } catch (error) {
+        console.error('Failed to clear cart on backend:', error)
+      }
+    }
   }
 
   const toggleCart = () => {
