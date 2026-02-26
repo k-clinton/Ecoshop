@@ -47,7 +47,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
       order.items = (items as any[]).map(item => ({
         ...item,
-        quantity: parseInt(item.quantity),
+        quantity: parseInt(item.quantity, 10),
         price: parseFloat(item.price)
       }));
 
@@ -127,7 +127,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
       order.items = (items as any[]).map(item => ({
         ...item,
-        quantity: parseInt(item.quantity),
+        quantity: parseInt(item.quantity, 10),
         price: parseFloat(item.price)
       }));
 

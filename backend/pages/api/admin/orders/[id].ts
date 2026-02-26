@@ -67,7 +67,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
             order.items = (items as any[]).map(item => ({
                 ...item,
-                quantity: parseInt(item.quantity),
+                quantity: parseInt(item.quantity, 10),
                 price: parseFloat(item.price)
             }));
             order.itemCount = order.items.reduce((sum: number, item: any) => sum + item.quantity, 0);
@@ -154,7 +154,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
             order.items = (items as any[]).map(item => ({
                 ...item,
-                quantity: parseInt(item.quantity),
+                quantity: parseInt(item.quantity, 10),
                 price: parseFloat(item.price)
             }));
             order.itemCount = order.items.reduce((sum: number, item: any) => sum + item.quantity, 0);

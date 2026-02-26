@@ -7,7 +7,12 @@ import { sendSuccess, sendError, handleError } from '@/lib/utils';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (handleCors(req, res)) return;
 
-    const authUser = requireAuth(req);
+    let authUser;
+    try {
+        authUser = requireAuth(req);
+    } catch (err) {
+        return sendError(res, 'Unauthorized', 401);
+    }
 
     // GET - List user's wishlist
     if (req.method === 'GET') {

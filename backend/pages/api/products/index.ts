@@ -92,8 +92,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    const limitNum = parseInt(limit as string);
-    const offsetNum = parseInt(offset as string);
+    const limitNum = parseInt(limit as string, 10);
+    const offsetNum = parseInt(offset as string, 10);
     query += ` LIMIT ? OFFSET ?`;
     params.push(limitNum, offsetNum);
 

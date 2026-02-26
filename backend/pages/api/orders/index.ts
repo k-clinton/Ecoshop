@@ -44,7 +44,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         );
         order.items = (items as any[]).map(item => ({
           ...item,
-          quantity: parseInt(item.quantity),
+          quantity: parseInt(item.quantity, 10),
           price: parseFloat(item.price)
         }));
 
@@ -107,6 +107,33 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       try {
         await connection.beginTransaction();
 
+        // Validate stock availability before creating order
+        for (const item of items) {
+          if (item.variantId) {
+            // Check variant stock
+            const [variantRows] = await connection.execute(
+              'SELECT stock FROM product_variants WHERE id = ?',
+              [item.variantId]
+            );
+            const variant = (variantRows as any[])[0];
+            if (!variant || variant.stock < item.quantity) {
+              await connection.rollback();
+              return sendError(res, `Insufficient stock for product variant`, 400);
+            }
+          } else {
+            // Check product stock
+            const [productRows] = await connection.execute(
+              'SELECT stock FROM products WHERE id = ?',
+              [item.productId]
+            );
+            const product = (productRows as any[])[0];
+            if (!product || product.stock < item.quantity) {
+              await connection.rollback();
+              return sendError(res, `Insufficient stock for product`, 400);
+            }
+          }
+        }
+
         // Stringify shippingAddress if it's an object
         const shippingAddressStr = typeof shippingAddress === 'string'
           ? shippingAddress
@@ -130,10 +157,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
         // Add order items and update stock
         for (const item of items) {
+          // Use the backend-calculated price, not the client-provided one
+          const actualPrice = productMap[item.productId];
           await connection.execute(
             `INSERT INTO order_items (order_id, product_id, variant_id, quantity, price)
              VALUES (?, ?, ?, ?, ?)`,
-            [orderId, item.productId, item.variantId || null, item.quantity, item.price]
+            [orderId, item.productId, item.variantId || null, item.quantity, actualPrice]
           );
 
           // Update variant stock if variant specified

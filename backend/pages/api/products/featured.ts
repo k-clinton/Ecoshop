@@ -13,6 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const { limit = '10' } = req.query;
 
+    const limitNum = parseInt(limit as string, 10);
     const [rows] = await pool.execute(
       `SELECT p.id, p.name, p.slug, p.description, p.price, p.compare_at_price as compareAtPrice,
               p.category, p.featured, p.rating, p.review_count as reviewCount, p.stock,
@@ -20,7 +21,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
        FROM products p
        WHERE p.featured = TRUE
        ORDER BY p.created_at DESC
-       LIMIT ${parseInt(limit as string)}`
+       LIMIT ?`,
+      [limitNum]
     );
 
     const products = rows as any[];
