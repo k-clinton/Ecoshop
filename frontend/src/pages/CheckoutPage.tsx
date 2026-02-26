@@ -213,16 +213,20 @@ export function CheckoutPage() {
       itemCount: items.length
     })
     
-    // Save confirmation state to sessionStorage
+    // Save confirmation state to sessionStorage FIRST
     sessionStorage.setItem('checkout_confirmed', JSON.stringify({
       timestamp: Date.now(),
       order: order,
       formData: formData
     }))
     
+    // Set step to confirmation BEFORE clearing cart
+    // This prevents the "cart is empty" check from triggering
     setStep('confirmation')
-    await clearCart()
     addToast('Payment successful! Order confirmed.', 'success')
+    
+    // Clear cart after setting confirmation step
+    await clearCart()
   }
 
   if (items.length === 0 && step !== 'confirmation') {
