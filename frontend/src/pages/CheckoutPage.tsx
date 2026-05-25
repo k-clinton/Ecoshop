@@ -55,6 +55,7 @@ export function CheckoutPage() {
     return null
   })
   const [clientSecret, setClientSecret] = useState<string>('')
+  const { settings } = useSettings()
 
   const [formData, setFormData] = useState(() => {
     // Restore form data if showing confirmation
@@ -78,7 +79,9 @@ export function CheckoutPage() {
     }
   })
 
-  const shipping = formData.shippingMethod === 'express' ? 12.99 : subtotal >= 50 ? 0 : 5.99
+  const shippingFee = settings?.shipping_fee ?? 5.99
+  const freeShippingThreshold = settings?.free_shipping_threshold ?? 50.00
+  const shipping = formData.shippingMethod === 'express' ? 12.99 : subtotal >= freeShippingThreshold ? 0 : shippingFee
   const tax = subtotal * 0.08
   const total = subtotal + shipping + tax
 
@@ -183,6 +186,7 @@ export function CheckoutPage() {
           shipping,
           tax,
           total,
+          shippingMethod: formData.shippingMethod as 'standard' | 'express',
           shippingAddress: {
             name: `${formData.firstName} ${formData.lastName} `,
             street: formData.address,

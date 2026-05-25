@@ -83,11 +83,16 @@ CREATE TABLE IF NOT EXISTS users (
   email_verified BOOLEAN DEFAULT FALSE,
   oauth_provider VARCHAR(50),
   oauth_id VARCHAR(255),
+  referral_code VARCHAR(20) UNIQUE,
+  referred_by VARCHAR(50),
+  loyalty_points INT DEFAULT 0,
   last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_email (email),
-  INDEX idx_oauth_provider_id (oauth_provider, oauth_id)
+  INDEX idx_oauth_provider_id (oauth_provider, oauth_id),
+  INDEX idx_referral_code (referral_code),
+  FOREIGN KEY (referred_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Pending registrations table (before email verification)
@@ -99,10 +104,12 @@ CREATE TABLE IF NOT EXISTS pending_registrations (
   role ENUM('customer', 'admin') DEFAULT 'customer',
   verification_code VARCHAR(6) NOT NULL,
   code_expires_at TIMESTAMP NOT NULL,
+  referred_by VARCHAR(50),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_email (email),
   INDEX idx_verification_code (verification_code),
-  INDEX idx_code_expires_at (code_expires_at)
+  INDEX idx_code_expires_at (code_expires_at),
+  FOREIGN KEY (referred_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Email verification codes table (for password reset and existing users)

@@ -37,11 +37,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         return sendError(res, 'Forbidden', 403);
       }
 
-      // Get order items
+      // Get order items enriched with product information
       const [items] = await pool.execute(
-        `SELECT product_id as productId, variant_id as variantId, quantity, price
-         FROM order_items
-         WHERE order_id = ?`,
+        `SELECT oi.product_id as productId, oi.variant_id as variantId, oi.quantity, oi.price,
+                p.name as productName,
+                (SELECT image_url FROM product_images WHERE product_id = p.id ORDER BY sort_order LIMIT 1) as productImage
+         FROM order_items oi
+         JOIN products p ON oi.product_id = p.id
+         WHERE oi.order_id = ?`,
         [id]
       );
 
@@ -58,21 +61,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         } catch (e) {
           console.error('Error parsing shippingAddress:', e);
         }
-      }
-
-      // Enrich items with product information
-      for (const item of order.items as any[]) {
-        const [productRows] = await pool.execute(
-          'SELECT name FROM products WHERE id = ?',
-          [item.productId]
-        );
-        item.productName = (productRows as any[])[0]?.name || 'Unknown Product';
-
-        const [imageRows] = await pool.execute(
-          'SELECT image_url FROM product_images WHERE product_id = ? ORDER BY sort_order LIMIT 1',
-          [item.productId]
-        );
-        item.productImage = (imageRows as any[])[0]?.image_url || '';
       }
 
       return sendSuccess(res, order);
@@ -117,11 +105,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
       const order = (rows as any[])[0];
 
-      // Get order items
+      // Get order items enriched with product information
       const [items] = await pool.execute(
-        `SELECT product_id as productId, variant_id as variantId, quantity, price
-         FROM order_items
-         WHERE order_id = ?`,
+        `SELECT oi.product_id as productId, oi.variant_id as variantId, oi.quantity, oi.price,
+                p.name as productName,
+                (SELECT image_url FROM product_images WHERE product_id = p.id ORDER BY sort_order LIMIT 1) as productImage
+         FROM order_items oi
+         JOIN products p ON oi.product_id = p.id
+         WHERE oi.order_id = ?`,
         [id]
       );
 
@@ -138,21 +129,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         } catch (e) {
           console.error('Error parsing shippingAddress:', e);
         }
-      }
-
-      // Enrich items with product information
-      for (const item of order.items as any[]) {
-        const [productRows] = await pool.execute(
-          'SELECT name FROM products WHERE id = ?',
-          [item.productId]
-        );
-        item.productName = (productRows as any[])[0]?.name || 'Unknown Product';
-
-        const [imageRows] = await pool.execute(
-          'SELECT image_url FROM product_images WHERE product_id = ? ORDER BY sort_order LIMIT 1',
-          [item.productId]
-        );
-        item.productImage = (imageRows as any[])[0]?.image_url || '';
       }
 
       return sendSuccess(res, order);

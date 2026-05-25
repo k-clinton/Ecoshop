@@ -33,6 +33,7 @@ export const orderSchema = z.object({
     shipping: z.number().nonnegative(),
     tax: z.number().nonnegative(),
     total: z.number().nonnegative(),
+    shippingMethod: z.enum(['standard', 'express']).optional(),
     shippingAddress: z.union([
         z.string().min(1),
         z.object({

@@ -17,11 +17,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     try {
         const authUser = requireAuth(req);
-        const { amount, currency = 'usd', orderId } = req.body;
+        const { orderId, currency = 'usd' } = req.body;
 
-        if (!amount || amount <= 0) {
-            return sendError(res, 'Invalid amount');
+        if (!orderId) {
+            return sendError(res, 'Order ID is required');
         }
+
+        // Fetch order to get the validated total
+        const [orders] = await pool.execute(
+            'SELECT total FROM orders WHERE id = ? AND user_id = ?',
+            [orderId, authUser.userId]
+        );
+        const order = (orders as any[])[0];
+
+        if (!order) {
+            return sendError(res, 'Order not found');
+        }
+
+        const amount = parseFloat(order.total);
 
         // Create a PaymentIntent with the order amount and currency
         const paymentIntent = await stripe.paymentIntents.create({
@@ -29,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             currency,
             metadata: {
                 userId: authUser.userId,
-                orderId: orderId || 'temp_' + Date.now(),
+                orderId: orderId,
             },
             automatic_payment_methods: {
                 enabled: true,

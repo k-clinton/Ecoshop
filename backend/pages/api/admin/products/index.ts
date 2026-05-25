@@ -22,28 +22,48 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       `);
       const products = rows as any[];
 
-      // Fetch related data for each product
-      for (const product of products) {
+      if (products.length > 0) {
+        const productIds = products.map(p => p.id);
+        const placeholders = productIds.map(() => '?').join(',');
+
         // Get images
-        const [images] = await pool.execute(
-          'SELECT image_url FROM product_images WHERE product_id = ? ORDER BY sort_order',
-          [product.id]
+        const [allImages] = await pool.execute(
+          `SELECT product_id as productId, image_url FROM product_images WHERE product_id IN (${placeholders}) ORDER BY sort_order`,
+          productIds
         );
-        product.images = (images as any[]).map(img => img.image_url);
+        const imagesMap = (allImages as any[]).reduce((acc, img) => {
+          if (!acc[img.productId]) acc[img.productId] = [];
+          acc[img.productId].push(img.image_url);
+          return acc;
+        }, {});
 
         // Get tags
-        const [tags] = await pool.execute(
-          'SELECT tag FROM product_tags WHERE product_id = ?',
-          [product.id]
+        const [allTags] = await pool.execute(
+          `SELECT product_id as productId, tag FROM product_tags WHERE product_id IN (${placeholders})`,
+          productIds
         );
-        product.tags = (tags as any[]).map(tag => tag.tag);
+        const tagsMap = (allTags as any[]).reduce((acc, t) => {
+          if (!acc[t.productId]) acc[t.productId] = [];
+          acc[t.productId].push(t.tag);
+          return acc;
+        }, {});
 
         // Get variants
-        const [variants] = await pool.execute(
-          'SELECT id, name, sku, price, stock, available FROM product_variants WHERE product_id = ?',
-          [product.id]
+        const [allVariants] = await pool.execute(
+          `SELECT id, product_id as productId, name, sku, price, stock, available FROM product_variants WHERE product_id IN (${placeholders})`,
+          productIds
         );
-        product.variants = variants;
+        const variantsMap = (allVariants as any[]).reduce((acc, v) => {
+          if (!acc[v.productId]) acc[v.productId] = [];
+          acc[v.productId].push(v);
+          return acc;
+        }, {});
+
+        for (const product of products) {
+          product.images = imagesMap[product.id] || [];
+          product.tags = tagsMap[product.id] || [];
+          product.variants = variantsMap[product.id] || [];
+        }
       }
 
       return sendSuccess(res, products);
@@ -118,7 +138,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const adminUser = getAuthUser(req);
         if (adminUser) {
           await logActivity(
-            Number(adminUser.userId),
+            adminUser.userId,
             'CREATE_PRODUCT',
             'product',
             productId,
